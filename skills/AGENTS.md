@@ -1,6 +1,8 @@
-# Inertia Rails Skills for Claude Code
+# Inertia Rails Skills
 
-A comprehensive collection of Claude Code skills for building high-quality Inertia.js applications with Ruby on Rails.
+A comprehensive collection of agent skills for building high-quality Inertia.js applications with Ruby on Rails.
+
+Compatible with 29+ AI coding agents via the [Vercel Skills CLI](https://github.com/vercel-labs/skills).
 
 ## Available Skills
 
@@ -22,18 +24,30 @@ A comprehensive collection of Claude Code skills for building high-quality Inert
 
 ## Installation
 
-### Project-Level Installation
+### One-Command Install (Recommended)
+
+Using the [Vercel Skills CLI](https://github.com/vercel-labs/skills):
 
 ```bash
-# From the skills directory
-mkdir -p /path/to/your/project/.claude/skills
-cp -r inertia-rails-* /path/to/your/project/.claude/skills/
+# Install all skills to your project
+npx skills add cole-robertson/inertia-rails-skills
+
+# Install globally (available across all projects)
+npx skills add cole-robertson/inertia-rails-skills -g
+
+# Install for specific agents only
+npx skills add cole-robertson/inertia-rails-skills -a claude-code -a cursor
+
+# List available skills before installing
+npx skills add cole-robertson/inertia-rails-skills --list
 ```
 
-### Personal Installation
+### Manual Installation
 
 ```bash
-cp -r inertia-rails-* ~/.claude/skills/
+# Clone and copy to your project
+git clone https://github.com/cole-robertson/inertia-rails-skills.git
+cp -r inertia-rails-skills/skills/* ~/.claude/skills/
 ```
 
 ## Quick Reference

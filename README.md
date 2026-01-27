@@ -1,7 +1,7 @@
 # Inertia Rails Skills
 
 <p align="center">
-  <strong>Comprehensive Claude Code skills for building modern Rails applications with Inertia.js</strong>
+  <strong>Comprehensive agent skills for building modern Rails applications with Inertia.js</strong>
 </p>
 
 <p align="center">
@@ -15,7 +15,9 @@
 
 ## What is this?
 
-A collection of **Claude Code skills** that provide best practices, patterns, and automation for building **Inertia.js applications with Ruby on Rails**. These skills turn years of Inertia Rails expertise into reusable guidance that Claude can apply while helping you code.
+A collection of **agent skills** that provide best practices, patterns, and automation for building **Inertia.js applications with Ruby on Rails**. These skills turn years of Inertia Rails expertise into reusable guidance that AI coding agents can apply while helping you code.
+
+Compatible with **29+ AI coding agents** including Claude Code, Cursor, Copilot, OpenCode, Cline, and more via the [Vercel Skills CLI](https://github.com/vercel-labs/skills).
 
 Inspired by [Vercel's agent-skills](https://github.com/vercel-labs/agent-skills) for React/Next.js, this package provides equivalent comprehensive coverage for the Inertia Rails ecosystem.
 
@@ -30,35 +32,55 @@ Inspired by [Vercel's agent-skills](https://github.com/vercel-labs/agent-skills)
 
 ## Installation
 
-### Quick Install (Recommended)
+### One-Command Install (Recommended)
+
+Using the [Vercel Skills CLI](https://github.com/vercel-labs/skills):
 
 ```bash
-# Clone or download the skills
-git clone https://github.com/your-repo/inertia-rails-skills.git
+# Install to your project (for all supported agents)
+npx skills add cole-robertson/inertia-rails-skills
 
-# Copy to your project
-cp -r inertia-rails-skills/.claude/skills/* /path/to/your/project/.claude/skills/
+# Install globally (available across all projects)
+npx skills add cole-robertson/inertia-rails-skills -g
 
-# Or install globally for all projects
-cp -r inertia-rails-skills/.claude/skills/* ~/.claude/skills/
+# Install for specific agents only
+npx skills add cole-robertson/inertia-rails-skills -a claude-code -a cursor
+
+# Install specific skills only
+npx skills add cole-robertson/inertia-rails-skills -s inertia-rails-best-practices -s inertia-rails-forms
+
+# List available skills before installing
+npx skills add cole-robertson/inertia-rails-skills --list
 ```
+
+### Supported Agents
+
+The Skills CLI supports 29+ agents including:
+
+| Agent | Identifier | Project Path |
+|-------|------------|--------------|
+| Claude Code | `claude-code` | `.claude/skills/` |
+| Cursor | `cursor` | `.cursor/skills/` |
+| GitHub Copilot | `github-copilot` | `.github/copilot/skills/` |
+| OpenCode | `opencode` | `.opencode/skills/` |
+| Cline | `cline` | `.cline/skills/` |
+| Windsurf | `windsurf` | `.windsurf/skills/` |
+| Codex | `codex` | `.codex/skills/` |
+
+*And many more: Amp, Gemini CLI, Goose, Roo Code, etc.*
 
 ### Manual Installation
 
-1. Create the skills directory in your project:
-   ```bash
-   mkdir -p .claude/skills
-   ```
+```bash
+# Clone the repo
+git clone https://github.com/cole-robertson/inertia-rails-skills.git
 
-2. Copy the skill folders:
-   ```bash
-   cp -r inertia-rails-best-practices .claude/skills/
-   cp -r inertia-rails-setup .claude/skills/
-   cp -r inertia-rails-forms .claude/skills/
-   cp -r inertia-rails-auth .claude/skills/
-   cp -r inertia-rails-testing .claude/skills/
-   cp -r inertia-rails-performance .claude/skills/
-   ```
+# Copy to your project's agent skills directory
+cp -r inertia-rails-skills/skills/* /path/to/your/project/.claude/skills/
+
+# Or install globally
+cp -r inertia-rails-skills/skills/* ~/.claude/skills/
+```
 
 ## Available Skills
 
@@ -66,23 +88,23 @@ cp -r inertia-rails-skills/.claude/skills/* ~/.claude/skills/
 
 | Skill | Description |
 |-------|-------------|
-| **[inertia-rails-best-practices](inertia-rails-best-practices/SKILL.md)** | Comprehensive guide with 50+ rules across 8 categories, prioritized by impact. The main reference for all Inertia Rails development. |
+| **[inertia-rails-best-practices](skills/inertia-rails-best-practices/SKILL.md)** | Comprehensive guide with 50+ rules across 8 categories, prioritized by impact. The main reference for all Inertia Rails development. |
 
 ### Task-Focused Skills
 
 | Skill | Description | When to Use |
 |-------|-------------|-------------|
-| **[inertia-rails-setup](inertia-rails-setup/SKILL.md)** | Project setup and configuration | New projects, adding Inertia to existing Rails apps |
-| **[inertia-rails-forms](inertia-rails-forms/SKILL.md)** | Form handling with useForm, validation, uploads | Building forms, handling errors, file uploads |
-| **[inertia-rails-auth](inertia-rails-auth/SKILL.md)** | Authentication and authorization patterns | Login flows, Devise integration, permissions |
-| **[inertia-rails-testing](inertia-rails-testing/SKILL.md)** | RSpec and Minitest testing | Writing tests for Inertia responses |
-| **[inertia-rails-performance](inertia-rails-performance/SKILL.md)** | Performance optimization techniques | Code splitting, prefetching, deferred props |
+| **[inertia-rails-setup](skills/inertia-rails-setup/SKILL.md)** | Project setup and configuration | New projects, adding Inertia to existing Rails apps |
+| **[inertia-rails-forms](skills/inertia-rails-forms/SKILL.md)** | Form handling with useForm, validation, uploads | Building forms, handling errors, file uploads |
+| **[inertia-rails-auth](skills/inertia-rails-auth/SKILL.md)** | Authentication and authorization patterns | Login flows, Devise integration, permissions |
+| **[inertia-rails-testing](skills/inertia-rails-testing/SKILL.md)** | RSpec and Minitest testing | Writing tests for Inertia responses |
+| **[inertia-rails-performance](skills/inertia-rails-performance/SKILL.md)** | Performance optimization techniques | Code splitting, prefetching, deferred props |
 
 ## Quick Start
 
 ### 1. Set Up a New Inertia Rails Project
 
-Ask Claude Code:
+Ask your AI coding agent:
 > "Set up a new Rails project with Inertia and React"
 
 Or invoke the skill directly:
@@ -92,21 +114,21 @@ Or invoke the skill directly:
 
 ### 2. Build Forms with Validation
 
-Ask Claude Code:
+Ask your agent:
 > "Create a user registration form with validation"
 
-Claude will use the forms skill to implement proper patterns with useForm, error handling, and the PRG (Post-Redirect-Get) pattern.
+The agent will use the forms skill to implement proper patterns with useForm, error handling, and the PRG (Post-Redirect-Get) pattern.
 
 ### 3. Add Authentication
 
-Ask Claude Code:
+Ask your agent:
 > "Add Devise authentication with Inertia login pages"
 
 The auth skill provides patterns for session management, permission passing, and history encryption.
 
 ### 4. Write Tests
 
-Ask Claude Code:
+Ask your agent:
 > "Write RSpec tests for this Inertia controller"
 
 The testing skill includes all RSpec matchers and Minitest assertions for Inertia responses.
@@ -195,8 +217,9 @@ Examples are primarily in Vue 3, with React/Svelte alternatives where patterns d
 
 ## Documentation
 
-- **[AGENTS.md](AGENTS.md)** - Index of all skills
-- **[Best Practices Reference](inertia-rails-best-practices/references/AGENTS.md)** - Complete rules with examples
+- **[skills/AGENTS.md](skills/AGENTS.md)** - Index of all skills
+- **[skills/CLAUDE.md](skills/CLAUDE.md)** - Agent-specific instructions
+- **[Best Practices Reference](skills/inertia-rails-best-practices/references/AGENTS.md)** - Complete rules with examples
 
 ### External Resources
 
@@ -204,37 +227,41 @@ Examples are primarily in Vue 3, with React/Svelte alternatives where patterns d
 - [Inertia.js Documentation](https://inertiajs.com/)
 - [GitHub: inertiajs/inertia-rails](https://github.com/inertiajs/inertia-rails)
 - [Evil Martians: Inertia.js in Rails](https://evilmartians.com/chronicles/inertiajs-in-rails-a-new-era-of-effortless-integration)
+- [Vercel Skills CLI](https://github.com/vercel-labs/skills)
 
 ## Directory Structure
 
 ```
-.claude/skills/
-├── README.md                           # This file
-├── AGENTS.md                           # Skills index
-├── CLAUDE.md                           # Claude-specific instructions
+inertia-rails-skills/
+├── README.md                               # This file
+├── LICENSE                                 # MIT License
 │
-├── inertia-rails-best-practices/       # Main reference skill
-│   ├── SKILL.md                        # Skill definition
-│   ├── README.md                       # Skill documentation
-│   ├── references/
-│   │   └── AGENTS.md                   # 50+ detailed rules
-│   └── scripts/
-│       └── setup.sh                    # Setup automation
-│
-├── inertia-rails-setup/                # Setup skill
-│   └── SKILL.md
-│
-├── inertia-rails-forms/                # Forms skill
-│   └── SKILL.md
-│
-├── inertia-rails-auth/                 # Auth skill
-│   └── SKILL.md
-│
-├── inertia-rails-testing/              # Testing skill
-│   └── SKILL.md
-│
-└── inertia-rails-performance/          # Performance skill
-    └── SKILL.md
+└── skills/                                 # Skills directory (CLI compatible)
+    ├── AGENTS.md                           # Skills index
+    ├── CLAUDE.md                           # Agent-specific instructions
+    │
+    ├── inertia-rails-best-practices/       # Main reference skill
+    │   ├── SKILL.md                        # Skill definition
+    │   ├── README.md                       # Skill documentation
+    │   ├── references/
+    │   │   └── AGENTS.md                   # 50+ detailed rules
+    │   └── scripts/
+    │       └── setup.sh                    # Setup automation
+    │
+    ├── inertia-rails-setup/                # Setup skill
+    │   └── SKILL.md
+    │
+    ├── inertia-rails-forms/                # Forms skill
+    │   └── SKILL.md
+    │
+    ├── inertia-rails-auth/                 # Auth skill
+    │   └── SKILL.md
+    │
+    ├── inertia-rails-testing/              # Testing skill
+    │   └── SKILL.md
+    │
+    └── inertia-rails-performance/          # Performance skill
+        └── SKILL.md
 ```
 
 ## Contributing
@@ -248,6 +275,7 @@ Contributions welcome! Areas for improvement:
 
 ## Acknowledgments
 
+- [Vercel Skills CLI](https://github.com/vercel-labs/skills) for the skills ecosystem
 - [Vercel agent-skills](https://github.com/vercel-labs/agent-skills) for the skill structure inspiration
 - [Inertia.js](https://inertiajs.com/) and [Jonathan Reinink](https://twitter.com/reinink) for creating Inertia
 - [Evil Martians](https://evilmartians.com/) for the inertia_rails gem maintenance
