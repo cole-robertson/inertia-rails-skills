@@ -12,6 +12,232 @@ user-invocable: true
 
 Practical recipes for common patterns and integrations in Inertia Rails applications.
 
+## Working with the Official Starter Kits
+
+The official starter kits provide a complete foundation. Here's how to customize them for your needs.
+
+### Starter Kit Structure (React)
+
+```
+app/
+├── controllers/
+│   ├── application_controller.rb    # Shared data setup
+│   ├── dashboard_controller.rb      # Example authenticated page
+│   ├── home_controller.rb           # Public landing page
+│   ├── sessions_controller.rb       # Login/logout
+│   ├── users_controller.rb          # Registration
+│   ├── identity/                    # Password reset
+│   └── settings/                    # User settings
+├── frontend/
+│   ├── components/
+│   │   ├── ui/                      # shadcn/ui components
+│   │   ├── nav-main.tsx             # Main navigation
+│   │   ├── app-sidebar.tsx          # Sidebar component
+│   │   └── user-menu-content.tsx    # User dropdown
+│   ├── hooks/
+│   │   ├── use-flash.tsx            # Flash message hook
+│   │   └── use-appearance.tsx       # Dark mode hook
+│   ├── layouts/
+│   │   ├── app-layout.tsx           # Main app layout
+│   │   ├── auth-layout.tsx          # Auth pages layout
+│   │   └── app/
+│   │       ├── app-sidebar-layout.tsx
+│   │       └── app-header-layout.tsx
+│   ├── pages/
+│   │   ├── dashboard/index.tsx      # Dashboard page
+│   │   ├── home/index.tsx           # Landing page
+│   │   ├── sessions/new.tsx         # Login page
+│   │   ├── users/new.tsx            # Registration page
+│   │   └── settings/                # Settings pages
+│   └── types/
+│       └── index.ts                 # Shared TypeScript types
+```
+
+### Adding a New Resource
+
+**1. Generate the controller:**
+```bash
+bin/rails generate controller Products index show new create edit update destroy
+```
+
+**2. Create the page components:**
+
+```tsx
+// app/frontend/pages/products/index.tsx
+import { Head, Link } from '@inertiajs/react'
+import AppLayout from '@/layouts/app-layout'
+import { Button } from '@/components/ui/button'
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from '@/components/ui/table'
+
+interface Product {
+  id: number
+  name: string
+  price: number
+}
+
+interface Props {
+  products: Product[]
+}
+
+export default function ProductsIndex({ products }: Props) {
+  return (
+    <AppLayout>
+      <Head title="Products" />
+
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Products</h1>
+        <Button asChild>
+          <Link href="/products/new">Add Product</Link>
+        </Button>
+      </div>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Price</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {products.map((product) => (
+            <TableRow key={product.id}>
+              <TableCell>{product.name}</TableCell>
+              <TableCell>${product.price}</TableCell>
+              <TableCell>
+                <Link href={`/products/${product.id}/edit`}>Edit</Link>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </AppLayout>
+  )
+}
+```
+
+**3. Update navigation:**
+
+```tsx
+// app/frontend/components/nav-main.tsx
+const navItems = [
+  { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { title: 'Products', href: '/products', icon: Package },  // Add this
+  // ...
+]
+```
+
+**4. Add route:**
+```ruby
+# config/routes.rb
+resources :products
+```
+
+### Adding New shadcn/ui Components
+
+The starter kit includes many components, but you can add more:
+
+```bash
+# Add a specific component
+npx shadcn@latest add toast
+npx shadcn@latest add calendar
+npx shadcn@latest add data-table
+
+# See all available components
+npx shadcn@latest add
+```
+
+### Customizing the Layout
+
+**Switch between sidebar and header layouts:**
+
+```tsx
+// app/frontend/layouts/app-layout.tsx
+import AppSidebarLayout from '@/layouts/app/app-sidebar-layout'
+import AppHeaderLayout from '@/layouts/app/app-header-layout'
+
+// Use sidebar (default)
+export default function AppLayout({ children }: Props) {
+  return <AppSidebarLayout>{children}</AppSidebarLayout>
+}
+
+// Or use header layout
+export default function AppLayout({ children }: Props) {
+  return <AppHeaderLayout>{children}</AppHeaderLayout>
+}
+```
+
+### Extending Types
+
+```tsx
+// app/frontend/types/index.ts
+export interface User {
+  id: number
+  name: string
+  email: string
+  avatar_url: string | null
+}
+
+// Add your own types
+export interface Product {
+  id: number
+  name: string
+  description: string
+  price: number
+  created_at: string
+}
+
+export interface PageProps {
+  auth: {
+    user: User | null
+  }
+  flash: {
+    success?: string
+    error?: string
+  }
+}
+```
+
+### Using the Flash Hook
+
+The starter kit includes a flash message system with Sonner toasts:
+
+```tsx
+// Already set up in the layout, just use flash in your controller
+class ProductsController < ApplicationController
+  def create
+    @product = Product.create(product_params)
+    redirect_to products_path, notice: 'Product created!'
+  end
+end
+```
+
+The `use-flash` hook automatically displays flash messages as toasts.
+
+### Removing Features You Don't Need
+
+**Remove settings pages:**
+```bash
+rm -rf app/frontend/pages/settings
+rm -rf app/controllers/settings
+# Remove routes in config/routes.rb
+```
+
+**Remove authentication (for internal tools):**
+```bash
+rm -rf app/frontend/pages/sessions
+rm -rf app/frontend/pages/users
+rm -rf app/frontend/pages/identity
+rm app/controllers/sessions_controller.rb
+rm app/controllers/users_controller.rb
+rm -rf app/controllers/identity
+# Update routes and ApplicationController
+```
+
+---
+
 ## Inertia Modal - Render Pages as Dialogs
 
 The `inertia_rails-contrib` gem and `@inertiaui/modal` package let you render any Inertia page as a modal dialog.

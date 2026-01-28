@@ -41,7 +41,15 @@ Activate skills when you detect:
 
 **Use for:** New projects, adding Inertia to existing apps
 
-**Recommend:**
+**Recommend for NEW projects:**
+1. Clone the official starter kit:
+   - React: `git clone https://github.com/inertia-rails/react-starter-kit myapp`
+   - Vue: `git clone https://github.com/inertia-rails/vue-starter-kit myapp`
+   - Svelte: `git clone https://github.com/inertia-rails/svelte-starter-kit myapp`
+2. Run `bin/setup` to install dependencies
+3. Customize from there (auth, shadcn/ui, layouts included)
+
+**For EXISTING Rails apps:**
 1. Use the Rails generator: `bin/rails generate inertia:install`
 2. Configure asset versioning with ViteRuby
 3. Set up shared data in ApplicationController

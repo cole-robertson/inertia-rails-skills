@@ -13,9 +13,83 @@ argument-hint: "[react|vue|svelte] [--typescript] [--tailwind]"
 
 This skill helps you set up Inertia.js in a Ruby on Rails application with your choice of frontend framework.
 
-## Quick Setup
+## Recommended: Official Starter Kits
 
-For a new Rails application with Inertia:
+For new projects, the fastest way to get started is cloning an official starter kit. These include authentication, shadcn/ui components, TypeScript, and optional SSR support out of the box.
+
+### React Starter Kit (Recommended)
+
+```bash
+git clone https://github.com/inertia-rails/react-starter-kit myapp
+cd myapp
+bin/setup
+```
+
+**Includes:**
+- React 19 + TypeScript
+- shadcn/ui component library (20+ components)
+- User authentication (login, register, password reset)
+- Settings pages (profile, password, email, sessions, appearance)
+- Multiple layouts (sidebar, header, auth variants)
+- Dark mode support
+- Kamal deployment config
+- Optional SSR support
+- Flash messages with Sonner toasts
+
+### Vue Starter Kit
+
+```bash
+git clone https://github.com/inertia-rails/vue-starter-kit myapp
+cd myapp
+bin/setup
+```
+
+### Svelte Starter Kit
+
+```bash
+git clone https://github.com/inertia-rails/svelte-starter-kit myapp
+cd myapp
+bin/setup
+```
+
+### Customizing the Starter Kit
+
+After cloning:
+
+1. **Rename the app:**
+   ```bash
+   # Update config/application.rb
+   module YourAppName
+     class Application < Rails::Application
+   ```
+
+2. **Update database config:**
+   ```bash
+   # Edit config/database.yml with your settings
+   ```
+
+3. **Remove example pages you don't need:**
+   ```bash
+   # Delete from app/frontend/pages/ and corresponding controllers
+   ```
+
+4. **Add your own pages:**
+   ```bash
+   bin/rails generate controller Products index show
+   # Create app/frontend/pages/products/index.tsx
+   ```
+
+5. **Customize the layout:**
+   - Edit `app/frontend/layouts/app-layout.tsx` for main app
+   - Edit `app/frontend/components/nav-main.tsx` for navigation
+
+---
+
+## Alternative: Generator Setup
+
+If you prefer starting from scratch or adding Inertia to an existing Rails app:
+
+### Quick Setup
 
 ```bash
 # Create new Rails app (if needed)
