@@ -98,7 +98,9 @@ cp -r inertia-rails-skills/skills/* ~/.claude/skills/
 | **[inertia-rails-forms](skills/inertia-rails-forms/SKILL.md)** | Form handling with useForm, validation, uploads | Building forms, handling errors, file uploads |
 | **[inertia-rails-auth](skills/inertia-rails-auth/SKILL.md)** | Authentication and authorization patterns | Login flows, Devise integration, permissions |
 | **[inertia-rails-testing](skills/inertia-rails-testing/SKILL.md)** | RSpec and Minitest testing | Writing tests for Inertia responses |
-| **[inertia-rails-performance](skills/inertia-rails-performance/SKILL.md)** | Performance optimization techniques | Code splitting, prefetching, deferred props |
+| **[inertia-rails-performance](skills/inertia-rails-performance/SKILL.md)** | Performance optimization techniques | Code splitting, prefetching, deferred props, WhenVisible |
+| **[inertia-rails-ssr](skills/inertia-rails-ssr/SKILL.md)** | Server-Side Rendering | SEO optimization, faster initial loads, meta tags |
+| **[inertia-rails-cookbook](skills/inertia-rails-cookbook/SKILL.md)** | Recipes and patterns | Modals, shadcn/ui, wizards, search with filters |
 
 ## Quick Start
 
@@ -260,7 +262,13 @@ inertia-rails-skills/
     ├── inertia-rails-testing/              # Testing skill
     │   └── SKILL.md
     │
-    └── inertia-rails-performance/          # Performance skill
+    ├── inertia-rails-performance/          # Performance skill
+    │   └── SKILL.md
+    │
+    ├── inertia-rails-ssr/                  # SSR skill
+    │   └── SKILL.md
+    │
+    └── inertia-rails-cookbook/             # Cookbook/recipes skill
         └── SKILL.md
 ```
 

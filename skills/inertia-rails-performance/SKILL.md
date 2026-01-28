@@ -607,6 +607,128 @@ router.on('finish', (event) => {
 })
 ```
 
+## WhenVisible - Lazy Load on Viewport Entry
+
+Load data only when elements become visible using Intersection Observer:
+
+### Basic Usage
+
+```vue
+<script setup>
+import { WhenVisible } from '@inertiajs/vue3'
+
+defineProps(['users', 'teams'])
+</script>
+
+<template>
+  <div>
+    <!-- Main content loads immediately -->
+    <UserList :users="users" />
+
+    <!-- Teams load when scrolled into view -->
+    <WhenVisible data="teams">
+      <template #fallback>
+        <TeamsSkeleton />
+      </template>
+      <TeamList :teams="teams" />
+    </WhenVisible>
+  </div>
+</template>
+```
+
+### Multiple Props
+
+```vue
+<WhenVisible :data="['teams', 'projects']">
+  <template #fallback>
+    <LoadingSpinner />
+  </template>
+  <Dashboard :teams="teams" :projects="projects" />
+</WhenVisible>
+```
+
+### Configuration Options
+
+```vue
+<!-- Start loading 500px before element is visible -->
+<WhenVisible data="comments" :buffer="500">
+  <Comments :comments="comments" />
+</WhenVisible>
+
+<!-- Custom wrapper element -->
+<WhenVisible data="stats" as="section">
+  <Stats :stats="stats" />
+</WhenVisible>
+
+<!-- Reload every time element becomes visible (for infinite scroll) -->
+<WhenVisible data="posts" always>
+  <PostList :posts="posts" />
+</WhenVisible>
+```
+
+### With Form Submissions
+
+Prevent reloading WhenVisible props after form submission:
+
+```javascript
+form.post('/comments', {
+  except: ['teams'],  // Don't reload teams managed by WhenVisible
+})
+```
+
+## Scroll Management
+
+### Scroll Preservation
+
+```javascript
+// Always preserve scroll position
+router.visit('/users', { preserveScroll: true })
+
+// Preserve only on validation errors
+router.visit('/users', { preserveScroll: 'errors' })
+
+// Conditional preservation
+router.visit('/users', {
+  preserveScroll: (page) => page.props.shouldPreserve
+})
+```
+
+### Link with Scroll Control
+
+```vue
+<Link href="/users" preserve-scroll>Users</Link>
+```
+
+### Scroll Regions
+
+For scrollable containers (not document body):
+
+```vue
+<template>
+  <div class="h-screen flex">
+    <!-- Sidebar with independent scroll -->
+    <nav class="w-64 overflow-y-auto" scroll-region>
+      <SidebarContent />
+    </nav>
+
+    <!-- Main content with independent scroll -->
+    <main class="flex-1 overflow-y-auto" scroll-region>
+      <slot />
+    </main>
+  </div>
+</template>
+```
+
+Inertia tracks and restores scroll position for elements with `scroll-region` attribute.
+
+### Reset Scroll Programmatically
+
+```javascript
+router.visit('/users', {
+  preserveScroll: false,  // Reset to top (default)
+})
+```
+
 ## Best Practices Summary
 
 1. **Props**: Return only necessary data, use lazy evaluation
@@ -619,3 +741,5 @@ router.on('finish', (event) => {
 8. **Database**: Eager load associations, select only needed columns
 9. **Caching**: Cache expensive computations
 10. **Monitoring**: Track and optimize slow requests
+11. **WhenVisible**: Lazy load below-the-fold content
+12. **Scroll Regions**: Use for complex layouts with multiple scroll areas

@@ -468,6 +468,98 @@ export default function CreateUser() {
 }
 ```
 
+## Remembering Form State
+
+Preserve form data across browser history navigation using `useRemember`.
+
+### The useRemember Hook
+
+```javascript
+import { useRemember } from '@inertiajs/vue3'
+
+// Form state persists across back/forward navigation
+const form = useRemember({
+  name: '',
+  email: '',
+  message: '',
+})
+```
+
+### Multiple Components on Same Page
+
+Provide a unique key when multiple components use remember:
+
+```javascript
+// Contact form
+const contactForm = useRemember({
+  email: '',
+  message: '',
+}, 'ContactForm')
+
+// Newsletter form
+const newsletterForm = useRemember({
+  email: '',
+}, 'NewsletterForm')
+```
+
+### With useForm Helper
+
+The form helper has built-in remember support:
+
+```javascript
+// Pass a unique key as first argument
+const form = useForm('CreateUser', {
+  name: '',
+  email: '',
+  password: '',
+})
+
+// For edit forms, include the ID for uniqueness
+const form = useForm(`EditUser:${props.user.id}`, {
+  name: props.user.name,
+  email: props.user.email,
+})
+```
+
+### Manual State Management
+
+```javascript
+import { router } from '@inertiajs/vue3'
+
+// Save state manually
+router.remember({ step: 2, selections: ['a', 'b'] }, 'wizard-state')
+
+// Restore state
+const savedState = router.restore('wizard-state')
+if (savedState) {
+  // Restore component state from savedState
+}
+```
+
+### React Example
+
+```jsx
+import { useRemember } from '@inertiajs/react'
+
+export default function ContactForm() {
+  const [form, setForm] = useRemember({
+    name: '',
+    email: '',
+    message: '',
+  }, 'ContactForm')
+
+  return (
+    <form>
+      <input
+        value={form.name}
+        onChange={(e) => setForm({ ...form, name: e.target.value })}
+      />
+      {/* ... */}
+    </form>
+  )
+}
+```
+
 ## Best Practices
 
 ### 1. Always Use the PRG Pattern

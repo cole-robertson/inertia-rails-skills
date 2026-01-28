@@ -21,6 +21,8 @@ Compatible with 29+ AI coding agents via the [Vercel Skills CLI](https://github.
 | [inertia-rails-auth](inertia-rails-auth/SKILL.md) | Authentication and authorization | Login, sessions, permissions, access control |
 | [inertia-rails-testing](inertia-rails-testing/SKILL.md) | RSpec and Minitest testing | Writing tests for Inertia responses |
 | [inertia-rails-performance](inertia-rails-performance/SKILL.md) | Performance optimization | Code splitting, prefetching, deferred props |
+| [inertia-rails-ssr](inertia-rails-ssr/SKILL.md) | Server-Side Rendering | SEO, faster initial loads, meta tags |
+| [inertia-rails-cookbook](inertia-rails-cookbook/SKILL.md) | Recipes and patterns | Modals, shadcn/ui, wizards, search |
 
 ## Installation
 
