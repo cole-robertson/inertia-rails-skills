@@ -4,7 +4,7 @@ description: Optimize Inertia Rails application performance. Use when implementi
 license: MIT
 metadata:
   author: community
-  version: "1.0.0"
+  version: "2.0.0"
 user-invocable: true
 ---
 
@@ -86,36 +86,28 @@ end
 
 ### Frontend Handling
 
-```vue
-<script setup>
-import { Deferred } from '@inertiajs/vue3'
+```jsx
+import { Deferred } from '@inertiajs/react'
 
-defineProps(['user', 'analytics', 'recommendations'])
-</script>
+export default function Dashboard({ user, analytics, recommendations, trending }) {
+  return (
+    <div>
+      {/* Immediate render */}
+      <h1>Welcome, {user.name}</h1>
 
-<template>
-  <div>
-    <!-- Immediate render -->
-    <h1>Welcome, {{ user.name }}</h1>
+      {/* Shows loading state then content */}
+      <Deferred data="analytics" fallback={<AnalyticsSkeleton />}>
+        <AnalyticsChart data={analytics} />
+      </Deferred>
 
-    <!-- Shows loading state then content -->
-    <Deferred data="analytics">
-      <template #fallback>
-        <AnalyticsSkeleton />
-      </template>
-      <AnalyticsChart :data="analytics" />
-    </Deferred>
-
-    <!-- Multiple deferred props -->
-    <Deferred :data="['recommendations', 'trending']">
-      <template #fallback>
-        <RecommendationsSkeleton />
-      </template>
-      <RecommendationsList :items="recommendations" />
-      <TrendingList :items="trending" />
-    </Deferred>
-  </div>
-</template>
+      {/* Multiple deferred props */}
+      <Deferred data={['recommendations', 'trending']} fallback={<RecommendationsSkeleton />}>
+        <RecommendationsList items={recommendations} />
+        <TrendingList items={trending} />
+      </Deferred>
+    </div>
+  )
+}
 ```
 
 ## Partial Reloads
@@ -123,7 +115,7 @@ defineProps(['user', 'analytics', 'recommendations'])
 Refresh only specific props without full page reload:
 
 ```javascript
-import { router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/react'
 
 // Reload only 'users' prop
 router.reload({ only: ['users'] })
@@ -157,12 +149,12 @@ end
 
 ### Link with Partial Reload
 
-```vue
-<Link href="/users" :only="['users']">
+```jsx
+<Link href="/users" only={['users']}>
   Refresh Users
 </Link>
 
-<Link href="/users?search=john" :only="['users']" preserve-state>
+<Link href="/users?search=john" only={['users']} preserveState>
   Search John
 </Link>
 ```
@@ -175,11 +167,11 @@ Split your bundle to load pages on demand:
 
 ```javascript
 // Lazy loading - loads pages on demand
-const pages = import.meta.glob('../pages/**/*.vue')
+const pages = import.meta.glob('../pages/**/*.tsx')
 
 createInertiaApp({
   resolve: (name) => {
-    return pages[`../pages/${name}.vue`]()  // Note: returns Promise
+    return pages[`../pages/${name}.tsx`]()  // Note: returns Promise
   },
   // ...
 })
@@ -189,10 +181,10 @@ createInertiaApp({
 
 ```javascript
 // All pages in initial bundle - faster for small apps
-const pages = import.meta.glob('../pages/**/*.vue', { eager: true })
+const pages = import.meta.glob('../pages/**/*.tsx', { eager: true })
 
 createInertiaApp({
-  resolve: (name) => pages[`../pages/${name}.vue`],
+  resolve: (name) => pages[`../pages/${name}.tsx`],
   // ...
 })
 ```
@@ -202,22 +194,22 @@ createInertiaApp({
 ```javascript
 // Eager load critical pages, lazy load others
 const criticalPages = import.meta.glob([
-  '../pages/Home.vue',
-  '../pages/Dashboard.vue',
+  '../pages/Home.tsx',
+  '../pages/Dashboard.tsx',
 ], { eager: true })
 
 const otherPages = import.meta.glob([
-  '../pages/**/*.vue',
-  '!../pages/Home.vue',
-  '!../pages/Dashboard.vue',
+  '../pages/**/*.tsx',
+  '!../pages/Home.tsx',
+  '!../pages/Dashboard.tsx',
 ])
 
 createInertiaApp({
   resolve: (name) => {
-    const page = criticalPages[`../pages/${name}.vue`]
+    const page = criticalPages[`../pages/${name}.tsx`]
     if (page) return page
 
-    return otherPages[`../pages/${name}.vue`]()
+    return otherPages[`../pages/${name}.tsx`]()
   },
 })
 ```
@@ -228,34 +220,34 @@ Load pages before user navigates:
 
 ### Link Prefetching
 
-```vue
-<!-- Prefetch on hover (default: 75ms delay) -->
+```jsx
+{/* Prefetch on hover (default: 75ms delay) */}
 <Link href="/users" prefetch>Users</Link>
 
-<!-- Prefetch immediately on mount -->
+{/* Prefetch immediately on mount */}
 <Link href="/dashboard" prefetch="mount">Dashboard</Link>
 
-<!-- Prefetch on mousedown -->
+{/* Prefetch on mousedown */}
 <Link href="/reports" prefetch="click">Reports</Link>
 
-<!-- Multiple strategies -->
-<Link href="/settings" :prefetch="['mount', 'hover']">Settings</Link>
+{/* Multiple strategies */}
+<Link href="/settings" prefetch={['mount', 'hover']}>Settings</Link>
 ```
 
 ### Cache Configuration
 
-```vue
-<!-- Cache for 1 minute -->
-<Link href="/users" prefetch cache-for="1m">Users</Link>
+```jsx
+{/* Cache for 1 minute */}
+<Link href="/users" prefetch cacheFor="1m">Users</Link>
 
-<!-- Cache for 30 seconds, stale for 1 minute (stale-while-revalidate) -->
-<Link href="/users" prefetch :cache-for="['30s', '1m']">Users</Link>
+{/* Cache for 30 seconds, stale for 1 minute (stale-while-revalidate) */}
+<Link href="/users" prefetch cacheFor={['30s', '1m']}>Users</Link>
 ```
 
 ### Programmatic Prefetching
 
 ```javascript
-import { router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/react'
 
 // Prefetch a page
 router.prefetch('/users')
@@ -271,13 +263,13 @@ router.prefetch('/users', {
 
 ### Cache Tags for Invalidation
 
-```vue
-<Link href="/users" prefetch cache-tags="users">Users</Link>
-<Link href="/users/active" prefetch cache-tags="users">Active Users</Link>
+```jsx
+<Link href="/users" prefetch cacheTags="users">Users</Link>
+<Link href="/users/active" prefetch cacheTags="users">Active Users</Link>
 
-<!-- Form that invalidates user cache -->
-<Form action="/users" method="post" invalidate-cache-tags="users">
-  <!-- ... -->
+{/* Form that invalidates user cache */}
+<Form action="/users" method="post" invalidateCacheTags="users">
+  {/* ... */}
 </Form>
 ```
 
@@ -289,11 +281,119 @@ router.flushByCacheTags('users')
 router.flushAll()
 ```
 
+## Instant Visits (v3)
+
+Render the target page immediately with shared props while the server request is in flight. When the response arrives, the page is updated with the full props.
+
+### Link with Instant Visit
+
+```jsx
+{/* Specify the target component to render immediately */}
+<Link href="/dashboard" component="Dashboard">
+  Dashboard
+</Link>
+
+{/* With intermediate page props */}
+<Link
+  href="/users/123"
+  component="Users/Show"
+  pageProps={{ user: { name: 'Loading...' } }}
+>
+  View User
+</Link>
+```
+
+### Programmatic Instant Visit
+
+```javascript
+router.visit('/dashboard', {
+  component: 'Dashboard',
+  pageProps: { title: 'Loading dashboard...' }
+})
+```
+
+### Server-Side Configuration
+
+Enable `expose_shared_prop_keys` (default: true) so the client knows which shared props are available for instant visits:
+
+```ruby
+InertiaRails.configure do |config|
+  config.expose_shared_prop_keys = true
+end
+```
+
+Instant visits work best when pages share data through `inertia_share` — the shared props are available immediately, and page-specific props load when the server responds.
+
 ## Infinite Scrolling
 
-Load more content without pagination:
+### Server-Side with InertiaRails.scroll()
 
-### Server-Side
+The `InertiaRails.scroll()` method integrates with pagination gems (Pagy, Kaminari) for seamless infinite scrolling:
+
+```ruby
+# Using Pagy (recommended)
+def index
+  pagy, posts = pagy(Post.order(created_at: :desc), limit: 20)
+
+  render inertia: {
+    posts: InertiaRails.scroll(pagy) {
+      posts.as_json(only: [:id, :title, :excerpt, :created_at])
+    }
+  }
+end
+
+# Using Kaminari
+def index
+  posts = Post.order(created_at: :desc).page(params[:page]).per(20)
+
+  render inertia: {
+    posts: InertiaRails.scroll(posts) {
+      posts.as_json(only: [:id, :title, :excerpt])
+    }
+  }
+end
+```
+
+### Frontend with InfiniteScroll Component (v3)
+
+```jsx
+import { InfiniteScroll } from '@inertiajs/react'
+
+export default function PostsIndex({ posts }) {
+  return (
+    <InfiniteScroll data={posts} component="posts">
+      {({ items }) => items.map(post => (
+        <div key={post.id}>
+          <h2>{post.title}</h2>
+          <p>{post.excerpt}</p>
+        </div>
+      ))}
+    </InfiniteScroll>
+  )
+}
+```
+
+### InfiniteScroll Options
+
+```jsx
+{/* Bidirectional scrolling */}
+<InfiniteScroll data={messages} component="messages" direction="both" />
+
+{/* Reverse scrolling (chat-like) */}
+<InfiniteScroll data={messages} component="messages" direction="reverse" />
+
+{/* Manual mode (click to load) */}
+<InfiniteScroll data={posts} component="posts" manual
+  trigger={<button>Load More</button>}
+/>
+
+{/* URL synchronization */}
+<InfiniteScroll data={posts} component="posts" preserveUrl />
+```
+
+### Manual Infinite Scrolling with Merge Props
+
+For custom implementations without the InfiniteScroll component:
 
 ```ruby
 def index
@@ -310,63 +410,42 @@ def index
 end
 ```
 
-### Client-Side (Vue)
+```jsx
+import { router } from '@inertiajs/react'
+import { useState } from 'react'
 
-```vue
-<script setup>
-import { router } from '@inertiajs/vue3'
-import { ref, onMounted, onUnmounted } from 'vue'
+export default function PostsIndex({ posts, pagination }) {
+  const [loading, setLoading] = useState(false)
 
-const props = defineProps(['posts', 'pagination'])
-const loading = ref(false)
-const sentinel = ref(null)
+  function loadMore() {
+    if (loading || !pagination.has_more) return
 
-function loadMore() {
-  if (loading.value || !props.pagination.has_more) return
+    setLoading(true)
+    router.reload({
+      data: { page: pagination.current_page + 1 },
+      only: ['posts', 'pagination'],
+      preserveScroll: true,
+      preserveState: true,
+      onFinish: () => setLoading(false),
+    })
+  }
 
-  loading.value = true
-  router.reload({
-    data: { page: props.pagination.current_page + 1 },
-    only: ['posts', 'pagination'],
-    preserveScroll: true,
-    preserveState: true,
-    onFinish: () => (loading.value = false),
-  })
-}
-
-// Intersection Observer for automatic loading
-let observer
-onMounted(() => {
-  observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0].isIntersecting) loadMore()
-    },
-    { rootMargin: '100px' }
+  return (
+    <div>
+      {posts.map(post => (
+        <div key={post.id}>
+          <h2>{post.title}</h2>
+          <p>{post.excerpt}</p>
+        </div>
+      ))}
+      {pagination.has_more && (
+        <button onClick={loadMore} disabled={loading}>
+          {loading ? 'Loading...' : 'Load More'}
+        </button>
+      )}
+    </div>
   )
-  if (sentinel.value) observer.observe(sentinel.value)
-})
-
-onUnmounted(() => observer?.disconnect())
-</script>
-
-<template>
-  <div>
-    <div v-for="post in posts" :key="post.id" class="post">
-      <h2>{{ post.title }}</h2>
-      <p>{{ post.excerpt }}</p>
-    </div>
-
-    <div ref="sentinel" class="h-4" />
-
-    <div v-if="loading" class="text-center py-4">
-      Loading more...
-    </div>
-
-    <div v-if="!pagination.has_more" class="text-center py-4 text-gray-500">
-      No more posts
-    </div>
-  </div>
-</template>
+}
 ```
 
 ### Merge Options
@@ -375,43 +454,38 @@ onUnmounted(() => observer?.disconnect())
 # Append to array (default)
 InertiaRails.merge { items }
 
-# Prepend to array
-InertiaRails.merge(prepend: true) { items }
-
-# Target specific key
-InertiaRails.merge(append: 'data') { { data: items, meta: meta } }
-
-# Update matching items instead of duplicating
-InertiaRails.merge(match_on: 'id') { items }
+# Deep merge objects with item matching
+InertiaRails.deep_merge { updated_items }
+InertiaRails.deep_merge(match_on: 'id') { items }
 ```
 
 ## Polling
 
 Real-time updates without WebSockets:
 
-```vue
-<script setup>
-import { usePoll } from '@inertiajs/vue3'
+```jsx
+import { usePoll } from '@inertiajs/react'
 
-// Poll every 5 seconds
-usePoll(5000)
+export default function Notifications({ notifications }) {
+  // Poll every 5 seconds
+  usePoll(5000)
 
-// With options
-usePoll(5000, {
-  only: ['notifications', 'messages'],
-  onStart: () => console.log('Polling...'),
-  onFinish: () => console.log('Poll complete'),
-})
+  // With options
+  usePoll(5000, {
+    only: ['notifications', 'messages'],
+    onStart: () => console.log('Polling...'),
+    onFinish: () => console.log('Poll complete'),
+  })
 
-// Manual control
-const { start, stop } = usePoll(5000, {}, { autoStart: false })
+  // Manual control
+  const { start, stop } = usePoll(5000, {}, { autoStart: false })
 
-// Start polling when component becomes visible
-const visible = usePageVisibility()
-watch(visible, (isVisible) => {
-  isVisible ? start() : stop()
-})
-</script>
+  return (
+    <div>
+      {notifications.map(n => <div key={n.id}>{n.message}</div>)}
+    </div>
+  )
+}
 ```
 
 ### Throttling in Background
@@ -484,6 +558,25 @@ render inertia: {
   # Optional + once: resolved only when requested, then remembered
   user_preferences: InertiaRails.optional(once: true) {
     current_user.preferences.as_json
+  }
+}
+```
+
+### Once Props Configuration
+
+```ruby
+render inertia: {
+  # Expire after a time period
+  app_config: InertiaRails.once(expires_in: 1.day) { AppConfig.to_json },
+
+  # Force refresh based on a condition
+  feature_flags: InertiaRails.once(fresh: current_user.updated_at > 1.hour.ago) {
+    FeatureFlags.for_user(current_user)
+  },
+
+  # Share cache key across pages (any page can refresh this data)
+  notifications_count: InertiaRails.once(key: 'notifications') {
+    current_user.unread_notifications_count
   }
 }
 ```
@@ -613,56 +706,48 @@ Load data only when elements become visible using Intersection Observer:
 
 ### Basic Usage
 
-```vue
-<script setup>
-import { WhenVisible } from '@inertiajs/vue3'
+```jsx
+import { WhenVisible } from '@inertiajs/react'
 
-defineProps(['users', 'teams'])
-</script>
+export default function Dashboard({ users, teams }) {
+  return (
+    <div>
+      {/* Main content loads immediately */}
+      <UserList users={users} />
 
-<template>
-  <div>
-    <!-- Main content loads immediately -->
-    <UserList :users="users" />
-
-    <!-- Teams load when scrolled into view -->
-    <WhenVisible data="teams">
-      <template #fallback>
-        <TeamsSkeleton />
-      </template>
-      <TeamList :teams="teams" />
-    </WhenVisible>
-  </div>
-</template>
+      {/* Teams load when scrolled into view */}
+      <WhenVisible data="teams" fallback={<TeamsSkeleton />}>
+        <TeamList teams={teams} />
+      </WhenVisible>
+    </div>
+  )
+}
 ```
 
 ### Multiple Props
 
-```vue
-<WhenVisible :data="['teams', 'projects']">
-  <template #fallback>
-    <LoadingSpinner />
-  </template>
-  <Dashboard :teams="teams" :projects="projects" />
+```jsx
+<WhenVisible data={['teams', 'projects']} fallback={<LoadingSpinner />}>
+  <Dashboard teams={teams} projects={projects} />
 </WhenVisible>
 ```
 
 ### Configuration Options
 
-```vue
-<!-- Start loading 500px before element is visible -->
-<WhenVisible data="comments" :buffer="500">
-  <Comments :comments="comments" />
+```jsx
+{/* Start loading 500px before element is visible */}
+<WhenVisible data="comments" buffer={500}>
+  <Comments comments={comments} />
 </WhenVisible>
 
-<!-- Custom wrapper element -->
+{/* Custom wrapper element */}
 <WhenVisible data="stats" as="section">
-  <Stats :stats="stats" />
+  <Stats stats={stats} />
 </WhenVisible>
 
-<!-- Reload every time element becomes visible (for infinite scroll) -->
+{/* Reload every time element becomes visible */}
 <WhenVisible data="posts" always>
-  <PostList :posts="posts" />
+  <PostList posts={posts} />
 </WhenVisible>
 ```
 
@@ -695,28 +780,30 @@ router.visit('/users', {
 
 ### Link with Scroll Control
 
-```vue
-<Link href="/users" preserve-scroll>Users</Link>
+```jsx
+<Link href="/users" preserveScroll>Users</Link>
 ```
 
 ### Scroll Regions
 
 For scrollable containers (not document body):
 
-```vue
-<template>
-  <div class="h-screen flex">
-    <!-- Sidebar with independent scroll -->
-    <nav class="w-64 overflow-y-auto" scroll-region>
-      <SidebarContent />
-    </nav>
+```jsx
+export default function AppLayout({ children }) {
+  return (
+    <div className="h-screen flex">
+      {/* Sidebar with independent scroll */}
+      <nav className="w-64 overflow-y-auto" scroll-region>
+        <SidebarContent />
+      </nav>
 
-    <!-- Main content with independent scroll -->
-    <main class="flex-1 overflow-y-auto" scroll-region>
-      <slot />
-    </main>
-  </div>
-</template>
+      {/* Main content with independent scroll */}
+      <main className="flex-1 overflow-y-auto" scroll-region>
+        {children}
+      </main>
+    </div>
+  )
+}
 ```
 
 Inertia tracks and restores scroll position for elements with `scroll-region` attribute.
@@ -727,6 +814,35 @@ Inertia tracks and restores scroll position for elements with `scroll-region` at
 router.visit('/users', {
   preserveScroll: false,  // Reset to top (default)
 })
+```
+
+## View Transitions (v3)
+
+Use the View Transitions API for smooth animated transitions between pages:
+
+```javascript
+import { router } from '@inertiajs/react'
+
+// Enable view transitions globally
+router.on('before', (event) => {
+  event.detail.visit.viewTransition = true
+})
+```
+
+```jsx
+{/* Per-link view transitions */}
+<Link href="/users" viewTransition>Users</Link>
+```
+
+```css
+/* Define transition animations */
+::view-transition-old(root) {
+  animation: slide-out 0.3s ease-in-out;
+}
+
+::view-transition-new(root) {
+  animation: slide-in 0.3s ease-in-out;
+}
 ```
 
 ## Best Practices Summary
@@ -743,3 +859,5 @@ router.visit('/users', {
 10. **Monitoring**: Track and optimize slow requests
 11. **WhenVisible**: Lazy load below-the-fold content
 12. **Scroll Regions**: Use for complex layouts with multiple scroll areas
+13. **Instant Visits**: Use for perceived instant navigation to known pages
+14. **View Transitions**: Add smooth animations between page transitions

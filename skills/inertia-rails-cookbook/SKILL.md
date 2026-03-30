@@ -4,7 +4,7 @@ description: Recipes and patterns for common Inertia Rails use cases. Includes m
 license: MIT
 metadata:
   author: community
-  version: "1.0.0"
+  version: "2.0.0"
 user-invocable: true
 ---
 
@@ -238,6 +238,63 @@ rm -rf app/controllers/identity
 
 ---
 
+## Layout Props (v3)
+
+Share data between pages and their persistent layouts using `useLayoutProps`:
+
+### Static Layout Props
+
+```tsx
+// app/frontend/pages/dashboard/index.tsx
+import AppLayout from '@/layouts/app-layout'
+
+export default function Dashboard({ stats }) {
+  return <div>Dashboard content</div>
+}
+
+// Pass static props to the layout
+Dashboard.layout = [AppLayout, { title: 'Dashboard', breadcrumbs: ['Home', 'Dashboard'] }]
+```
+
+### Dynamic Layout Props
+
+```tsx
+import { useLayoutProps } from '@inertiajs/react'
+import AppLayout from '@/layouts/app-layout'
+
+export default function UserProfile({ user }) {
+  // Set layout props dynamically
+  useLayoutProps({ title: user.name, breadcrumbs: ['Users', user.name] })
+
+  return <div>{user.name}'s profile</div>
+}
+
+UserProfile.layout = AppLayout
+```
+
+### In the Layout
+
+```tsx
+// app/frontend/layouts/app-layout.tsx
+import { useLayoutProps } from '@inertiajs/react'
+
+export default function AppLayout({ children }) {
+  const { title, breadcrumbs } = useLayoutProps()
+
+  return (
+    <div>
+      <header>
+        <h1>{title}</h1>
+        <nav>{breadcrumbs?.join(' > ')}</nav>
+      </header>
+      <main>{children}</main>
+    </div>
+  )
+}
+```
+
+---
+
 ## Inertia Modal - Render Pages as Dialogs
 
 The `inertia_rails-contrib` gem and `@inertiaui/modal` package let you render any Inertia page as a modal dialog.
@@ -255,22 +312,21 @@ npm install @inertiaui/modal-vue
 npm install @inertiaui/modal-react
 ```
 
-### Setup (Vue)
+### Setup (React)
 
 ```javascript
 // app/frontend/entrypoints/application.js
-import { createInertiaApp } from '@inertiajs/vue3'
-import { renderApp } from '@inertiaui/modal-vue'
-import { createSSRApp, h } from 'vue'
+import { createInertiaApp } from '@inertiajs/react'
+import { createRoot } from 'react-dom/client'
+import { renderApp } from '@inertiaui/modal-react'
 
 createInertiaApp({
-  resolve: (name) => pages[`../pages/${name}.vue`],
-  setup({ el, App, props, plugin }) {
-    createSSRApp({
-      render: () => renderApp(App, props),  // Use renderApp
-    })
-      .use(plugin)
-      .mount(el)
+  resolve: (name) => {
+    const pages = import.meta.glob('../pages/**/*.tsx', { eager: true })
+    return pages[`../pages/${name}.tsx`]
+  },
+  setup({ el, App, props }) {
+    createRoot(el).render(renderApp(App, props))
   },
 })
 ```
@@ -282,7 +338,7 @@ createInertiaApp({
 module.exports = {
   content: [
     // ... your content paths
-    './node_modules/@inertiaui/modal-vue/src/**/*.vue',
+    './node_modules/@inertiaui/modal-react/src/**/*.{js,jsx,ts,tsx}',
   ],
 }
 ```
@@ -290,39 +346,37 @@ module.exports = {
 ```css
 /* For Tailwind v4 */
 @import "tailwindcss";
-@source '../../../node_modules/@inertiaui/modal-vue';
+@source '../../../node_modules/@inertiaui/modal-react';
 ```
 
 ### Basic Usage
 
 **Open a page as modal:**
-```vue
-<script setup>
-import { ModalLink } from '@inertiaui/modal-vue'
-</script>
+```jsx
+import { ModalLink } from '@inertiaui/modal-react'
 
-<template>
-  <ModalLink href="/users/create">
-    Create User
-  </ModalLink>
-</template>
+export default function UsersList() {
+  return (
+    <ModalLink href="/users/create">
+      Create User
+    </ModalLink>
+  )
+}
 ```
 
 **Wrap page content in Modal:**
-```vue
-<!-- pages/users/create.vue -->
-<script setup>
-import { Modal } from '@inertiaui/modal-vue'
+```jsx
+// pages/users/create.tsx
+import { Modal } from '@inertiaui/modal-react'
 
-defineProps(['roles'])
-</script>
-
-<template>
-  <Modal>
-    <h2>Create User</h2>
-    <UserForm :roles="roles" />
-  </Modal>
-</template>
+export default function CreateUser({ roles }) {
+  return (
+    <Modal>
+      <h2>Create User</h2>
+      <UserForm roles={roles} />
+    </Modal>
+  )
+}
 ```
 
 ### Modal with Base URL
@@ -341,7 +395,7 @@ end
 ```
 
 **Link with navigation:**
-```vue
+```jsx
 <ModalLink href="/users/create" navigate>
   Create User
 </ModalLink>
@@ -351,45 +405,39 @@ Now the URL changes to `/users/create` when opened, supports browser back button
 
 ### Slideover Variant
 
-```vue
-<template>
-  <Modal slideover>
-    <h2>User Details</h2>
-    <!-- Content slides in from the side -->
-  </Modal>
-</template>
+```jsx
+<Modal slideover>
+  <h2>User Details</h2>
+  {/* Content slides in from the side */}
+</Modal>
 ```
 
 ### Nested Modals
 
-```vue
-<template>
-  <Modal>
-    <h2>Edit User</h2>
-    <UserForm />
+```jsx
+<Modal>
+  <h2>Edit User</h2>
+  <UserForm />
 
-    <!-- Open another modal from within -->
-    <ModalLink href="/roles/create">
-      Add New Role
-    </ModalLink>
-  </Modal>
-</template>
+  {/* Open another modal from within */}
+  <ModalLink href="/roles/create">
+    Add New Role
+  </ModalLink>
+</Modal>
 ```
 
 ### Closing Modals
 
-```vue
-<script setup>
-import { Modal } from '@inertiaui/modal-vue'
+```jsx
+import { Modal } from '@inertiaui/modal-react'
 
-const emit = defineEmits(['close'])
-</script>
-
-<template>
-  <Modal @close="emit('close')">
-    <button @click="emit('close')">Cancel</button>
-  </Modal>
-</template>
+export default function EditUser({ onClose }) {
+  return (
+    <Modal onClose={onClose}>
+      <button onClick={onClose}>Cancel</button>
+    </Modal>
+  )
+}
 ```
 
 ---
@@ -398,155 +446,155 @@ const emit = defineEmits(['close'])
 
 Use shadcn/ui components with Inertia Rails for a polished UI.
 
-### Setup (Vue)
+### Setup (React)
 
 ```bash
 # Initialize shadcn/ui
-npx shadcn-vue@latest init
+npx shadcn@latest init
 
 # Add components
-npx shadcn-vue@latest add button input card form
+npx shadcn@latest add button input card form
 ```
 
 ### Form with shadcn/ui
 
-```vue
-<script setup>
-import { useForm } from '@inertiajs/vue3'
+```jsx
+import { useForm } from '@inertiajs/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-const form = useForm({
-  email: '',
-  password: '',
-})
+export default function LoginForm() {
+  const { data, setData, post, processing, errors } = useForm({
+    email: '',
+    password: '',
+  })
 
-function submit() {
-  form.post('/login')
+  function submit(e) {
+    e.preventDefault()
+    post('/login')
+  }
+
+  return (
+    <Card className="w-[400px]">
+      <CardHeader>
+        <CardTitle>Login</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={data.email}
+              onChange={(e) => setData('email', e.target.value)}
+              placeholder="you@example.com"
+            />
+            {errors.email && (
+              <p className="text-sm text-red-500">{errors.email}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={data.password}
+              onChange={(e) => setData('password', e.target.value)}
+            />
+          </div>
+
+          <Button type="submit" disabled={processing} className="w-full">
+            {processing ? 'Signing in...' : 'Sign in'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  )
 }
-</script>
-
-<template>
-  <Card class="w-[400px]">
-    <CardHeader>
-      <CardTitle>Login</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <form @submit.prevent="submit" class="space-y-4">
-        <div class="space-y-2">
-          <Label for="email">Email</Label>
-          <Input
-            id="email"
-            v-model="form.email"
-            type="email"
-            placeholder="you@example.com"
-          />
-          <p v-if="form.errors.email" class="text-sm text-red-500">
-            {{ form.errors.email }}
-          </p>
-        </div>
-
-        <div class="space-y-2">
-          <Label for="password">Password</Label>
-          <Input
-            id="password"
-            v-model="form.password"
-            type="password"
-          />
-        </div>
-
-        <Button type="submit" :disabled="form.processing" class="w-full">
-          {{ form.processing ? 'Signing in...' : 'Sign in' }}
-        </Button>
-      </form>
-    </CardContent>
-  </Card>
-</template>
 ```
 
 ### Data Table with Sorting and Filtering
 
-```vue
-<script setup>
-import { router } from '@inertiajs/vue3'
-import { ref, watch } from 'vue'
-import { useDebounceFn } from '@vueuse/core'
+```jsx
+import { router, usePage } from '@inertiajs/react'
+import { useState, useCallback } from 'react'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Link } from '@inertiajs/react'
+import { useDebouncedCallback } from 'use-debounce'
 
-const props = defineProps(['users', 'filters'])
+export default function UsersTable({ users, filters }) {
+  const [search, setSearch] = useState(filters.search || '')
+  const [sort, setSort] = useState(filters.sort || 'name')
+  const [direction, setDirection] = useState(filters.direction || 'asc')
 
-const search = ref(props.filters.search || '')
-const sort = ref(props.filters.sort || 'name')
-const direction = ref(props.filters.direction || 'asc')
+  const debouncedSearch = useDebouncedCallback((value) => {
+    router.get('/users', { search: value, sort, direction }, {
+      preserveState: true,
+      replace: true,
+    })
+  }, 300)
 
-const debouncedSearch = useDebounceFn(() => {
-  router.get('/users', {
-    search: search.value,
-    sort: sort.value,
-    direction: direction.value,
-  }, {
-    preserveState: true,
-    replace: true,
-  })
-}, 300)
-
-watch(search, debouncedSearch)
-
-function toggleSort(column) {
-  if (sort.value === column) {
-    direction.value = direction.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sort.value = column
-    direction.value = 'asc'
+  function toggleSort(column) {
+    const newDirection = sort === column && direction === 'asc' ? 'desc' : 'asc'
+    setSort(column)
+    setDirection(newDirection)
+    router.get('/users', { search, sort: column, direction: newDirection }, {
+      preserveState: true,
+      replace: true,
+    })
   }
-  debouncedSearch()
+
+  return (
+    <div className="space-y-4">
+      <Input
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value)
+          debouncedSearch(e.target.value)
+        }}
+        placeholder="Search users..."
+        className="max-w-sm"
+      />
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>
+              <Button variant="ghost" onClick={() => toggleSort('name')}>
+                Name {sort === 'name' && (direction === 'asc' ? '↑' : '↓')}
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button variant="ghost" onClick={() => toggleSort('email')}>
+                Email {sort === 'email' && (direction === 'asc' ? '↑' : '↓')}
+              </Button>
+            </TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {users.map((user) => (
+            <TableRow key={user.id}>
+              <TableCell>{user.name}</TableCell>
+              <TableCell>{user.email}</TableCell>
+              <TableCell>
+                <Link href={`/users/${user.id}/edit`}>Edit</Link>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  )
 }
-</script>
-
-<template>
-  <div class="space-y-4">
-    <Input
-      v-model="search"
-      placeholder="Search users..."
-      class="max-w-sm"
-    />
-
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>
-            <Button variant="ghost" @click="toggleSort('name')">
-              Name
-              <span v-if="sort === 'name'">{{ direction === 'asc' ? '↑' : '↓' }}</span>
-            </Button>
-          </TableHead>
-          <TableHead>
-            <Button variant="ghost" @click="toggleSort('email')">
-              Email
-              <span v-if="sort === 'email'">{{ direction === 'asc' ? '↑' : '↓' }}</span>
-            </Button>
-          </TableHead>
-          <TableHead>Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow v-for="user in users" :key="user.id">
-          <TableCell>{{ user.name }}</TableCell>
-          <TableCell>{{ user.email }}</TableCell>
-          <TableCell>
-            <Link :href="`/users/${user.id}/edit`">Edit</Link>
-          </TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  </div>
-</template>
 ```
 
 ---
@@ -599,65 +647,67 @@ end
 
 ### Frontend with URL Sync
 
-```vue
-<script setup>
-import { router } from '@inertiajs/vue3'
-import { ref, watch } from 'vue'
-import { useDebounceFn } from '@vueuse/core'
+```jsx
+import { router } from '@inertiajs/react'
+import { useState } from 'react'
+import { useDebouncedCallback } from 'use-debounce'
 
-const props = defineProps(['users', 'filters', 'pagination'])
+export default function UsersIndex({ users, filters, pagination }) {
+  const [search, setSearch] = useState(filters.search || '')
+  const [role, setRole] = useState(filters.role || '')
+  const [active, setActive] = useState(filters.active || '')
 
-const search = ref(props.filters.search || '')
-const role = ref(props.filters.role || '')
-const active = ref(props.filters.active || '')
+  function applyFilters(overrides = {}) {
+    router.get('/users', {
+      search: search || undefined,
+      role: role || undefined,
+      active: active || undefined,
+      ...overrides,
+    }, {
+      preserveState: true,
+      replace: true,
+    })
+  }
 
-function applyFilters() {
-  router.get('/users', {
-    search: search.value || undefined,
-    role: role.value || undefined,
-    active: active.value || undefined,
-  }, {
-    preserveState: true,
-    replace: true,
-  })
-}
+  const debouncedSearch = useDebouncedCallback(() => applyFilters(), 300)
 
-const debouncedSearch = useDebounceFn(applyFilters, 300)
-watch(search, debouncedSearch)
+  function clearFilters() {
+    setSearch('')
+    setRole('')
+    setActive('')
+    router.get('/users', {}, { preserveState: true, replace: true })
+  }
 
-function clearFilters() {
-  search.value = ''
-  role.value = ''
-  active.value = ''
-  applyFilters()
-}
-</script>
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-4">
+        <input
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); debouncedSearch() }}
+          placeholder="Search..."
+          className="input"
+        />
 
-<template>
-  <div class="space-y-4">
-    <div class="flex gap-4">
-      <input v-model="search" placeholder="Search..." class="input" />
+        <select value={role} onChange={(e) => { setRole(e.target.value); applyFilters({ role: e.target.value }) }} className="select">
+          <option value="">All Roles</option>
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+        </select>
 
-      <select v-model="role" @change="applyFilters" class="select">
-        <option value="">All Roles</option>
-        <option value="admin">Admin</option>
-        <option value="user">User</option>
-      </select>
+        <select value={active} onChange={(e) => { setActive(e.target.value); applyFilters({ active: e.target.value }) }} className="select">
+          <option value="">All Status</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
 
-      <select v-model="active" @change="applyFilters" class="select">
-        <option value="">All Status</option>
-        <option value="true">Active</option>
-        <option value="false">Inactive</option>
-      </select>
+        <button onClick={clearFilters}>Clear</button>
+      </div>
 
-      <button @click="clearFilters">Clear</button>
+      <UserTable users={users} />
+      <Pagination pagination={pagination} />
     </div>
-
-    <UserTable :users="users" />
-
-    <Pagination :pagination="pagination" />
-  </div>
-</template>
+  )
+}
 ```
 
 ---
@@ -710,56 +760,52 @@ end
 
 ### Wizard Component
 
-```vue
-<script setup>
-import { useForm, router } from '@inertiajs/vue3'
+```jsx
+import { useForm, router } from '@inertiajs/react'
 
-const props = defineProps(['step', 'total_steps', 'data'])
+export default function WizardStep({ step, total_steps, data, children }) {
+  const form = useForm(data)
 
-const form = useForm({
-  ...props.data
-})
+  function next(e) {
+    e.preventDefault()
+    form.post(`/onboarding?step=${step}`)
+  }
 
-function next() {
-  form.post(`/onboarding?step=${props.step}`)
-}
+  function back() {
+    router.get(`/onboarding?step=${step - 1}`)
+  }
 
-function back() {
-  router.get(`/onboarding?step=${props.step - 1}`)
-}
-</script>
-
-<template>
-  <div>
-    <!-- Progress indicator -->
-    <div class="flex gap-2 mb-8">
-      <div
-        v-for="i in total_steps"
-        :key="i"
-        :class="[
-          'w-8 h-8 rounded-full flex items-center justify-center',
-          i <= step ? 'bg-blue-500 text-white' : 'bg-gray-200'
-        ]"
-      >
-        {{ i }}
+  return (
+    <div>
+      {/* Progress indicator */}
+      <div className="flex gap-2 mb-8">
+        {Array.from({ length: total_steps }, (_, i) => i + 1).map((i) => (
+          <div
+            key={i}
+            className={`w-8 h-8 rounded-full flex items-center justify-center ${
+              i <= step ? 'bg-blue-500 text-white' : 'bg-gray-200'
+            }`}
+          >
+            {i}
+          </div>
+        ))}
       </div>
+
+      <form onSubmit={next}>
+        {typeof children === 'function' ? children({ form }) : children}
+
+        <div className="flex gap-4 mt-8">
+          {step > 1 && (
+            <button type="button" onClick={back}>Back</button>
+          )}
+          <button type="submit" disabled={form.processing}>
+            {step === total_steps ? 'Complete' : 'Next'}
+          </button>
+        </div>
+      </form>
     </div>
-
-    <form @submit.prevent="next">
-      <!-- Step content via slot -->
-      <slot :form="form" />
-
-      <div class="flex gap-4 mt-8">
-        <button v-if="step > 1" type="button" @click="back">
-          Back
-        </button>
-        <button type="submit" :disabled="form.processing">
-          {{ step === total_steps ? 'Complete' : 'Next' }}
-        </button>
-      </div>
-    </form>
-  </div>
-</template>
+  )
+}
 ```
 
 ---
@@ -782,83 +828,137 @@ class ApplicationController < ActionController::Base
 end
 ```
 
-### Toast Component (Vue)
+### Toast Component (React)
 
-```vue
-<!-- components/FlashMessages.vue -->
-<script setup>
-import { usePage } from '@inertiajs/vue3'
-import { watch, ref } from 'vue'
+```jsx
+// components/FlashMessages.tsx
+import { usePage } from '@inertiajs/react'
+import { useEffect, useState } from 'react'
 
-const page = usePage()
-const toasts = ref([])
-
-watch(() => page.props.flash, (flash) => {
-  Object.entries(flash).forEach(([type, message]) => {
-    if (message) {
-      const id = Date.now()
-      toasts.value.push({ id, type, message })
-
-      setTimeout(() => {
-        toasts.value = toasts.value.filter(t => t.id !== id)
-      }, 5000)
-    }
-  })
-}, { immediate: true })
-</script>
-
-<template>
-  <div class="fixed top-4 right-4 space-y-2 z-50">
-    <TransitionGroup name="toast">
-      <div
-        v-for="toast in toasts"
-        :key="toast.id"
-        :class="[
-          'px-4 py-3 rounded-lg shadow-lg',
-          {
-            'bg-green-500 text-white': toast.type === 'success',
-            'bg-red-500 text-white': toast.type === 'error',
-            'bg-blue-500 text-white': toast.type === 'info',
-            'bg-yellow-500 text-black': toast.type === 'warning',
-          }
-        ]"
-      >
-        {{ toast.message }}
-      </div>
-    </TransitionGroup>
-  </div>
-</template>
-
-<style scoped>
-.toast-enter-active,
-.toast-leave-active {
-  transition: all 0.3s ease;
+interface Toast {
+  id: number
+  type: string
+  message: string
 }
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translateX(100%);
+
+export default function FlashMessages() {
+  const { flash } = usePage().props
+  const [toasts, setToasts] = useState<Toast[]>([])
+
+  useEffect(() => {
+    if (!flash) return
+
+    Object.entries(flash).forEach(([type, message]) => {
+      if (message) {
+        const id = Date.now() + Math.random()
+        setToasts((prev) => [...prev, { id, type, message: message as string }])
+
+        setTimeout(() => {
+          setToasts((prev) => prev.filter((t) => t.id !== id))
+        }, 5000)
+      }
+    })
+  }, [flash])
+
+  const colorMap: Record<string, string> = {
+    success: 'bg-green-500 text-white',
+    error: 'bg-red-500 text-white',
+    info: 'bg-blue-500 text-white',
+    warning: 'bg-yellow-500 text-black',
+  }
+
+  return (
+    <div className="fixed top-4 right-4 space-y-2 z-50">
+      {toasts.map((toast) => (
+        <div
+          key={toast.id}
+          className={`px-4 py-3 rounded-lg shadow-lg transition-all ${colorMap[toast.type] || 'bg-gray-500 text-white'}`}
+        >
+          {toast.message}
+        </div>
+      ))}
+    </div>
+  )
 }
-</style>
 ```
 
 ### Usage in Layout
 
-```vue
-<!-- layouts/AppLayout.vue -->
-<script setup>
-import FlashMessages from '@/components/FlashMessages.vue'
-</script>
+```jsx
+// layouts/AppLayout.tsx
+import FlashMessages from '@/components/FlashMessages'
 
-<template>
-  <div>
-    <FlashMessages />
-    <nav><!-- ... --></nav>
-    <main>
-      <slot />
-    </main>
-  </div>
-</template>
+export default function AppLayout({ children }) {
+  return (
+    <div>
+      <FlashMessages />
+      <nav>{/* ... */}</nav>
+      <main>{children}</main>
+    </div>
+  )
+}
+```
+
+---
+
+## Flash API (v3)
+
+Inertia.js v3 introduces a dedicated Flash API for richer flash data beyond simple key-value strings.
+
+### Server-Side
+
+```ruby
+class PostsController < ApplicationController
+  def create
+    post = Post.create!(post_params)
+
+    # Standard Rails flash (exposed via flash_keys config)
+    redirect_to posts_path, notice: 'Post created!'
+  end
+
+  def update
+    post = Post.find(params[:id])
+
+    # Rich flash data via flash.inertia
+    flash.inertia[:undo] = { url: undo_post_path(post), expires_in: 30 }
+
+    # Current-request-only flash
+    flash.now.inertia[:notification] = { type: 'info', message: 'Saving...' }
+
+    redirect_to post_path(post)
+  end
+end
+```
+
+### Frontend
+
+```javascript
+import { usePage, router } from '@inertiajs/react'
+
+function FlashHandler() {
+  const { flash } = usePage().props
+
+  // Access standard flash
+  if (flash.notice) showToast(flash.notice)
+
+  // Access rich flash data
+  if (flash.undo) {
+    showUndoToast(flash.undo.message, () => {
+      router.post(flash.undo.url)
+    })
+  }
+}
+
+// Client-side flash (no server roundtrip)
+router.flash({ notice: 'Saved locally' })
+```
+
+### Configure Flash Keys
+
+```ruby
+InertiaRails.configure do |config|
+  config.flash_keys = %i[notice alert success error warning info]
+end
 ```
 
 ---
@@ -867,98 +967,103 @@ import FlashMessages from '@/components/FlashMessages.vue'
 
 ### Reusable Confirm Component
 
-```vue
-<!-- components/ConfirmDialog.vue -->
-<script setup>
-import { ref } from 'vue'
+```jsx
+// components/ConfirmDialog.tsx
+import { useState, useCallback, useRef } from 'react'
 
-const isOpen = ref(false)
-const resolvePromise = ref(null)
-const options = ref({})
+interface ConfirmOptions {
+  title?: string
+  message?: string
+  confirmText?: string
+  cancelText?: string
+  destructive?: boolean
+}
 
-function confirm(opts = {}) {
-  options.value = {
-    title: 'Are you sure?',
-    message: 'This action cannot be undone.',
-    confirmText: 'Confirm',
-    cancelText: 'Cancel',
-    destructive: false,
-    ...opts
+export function useConfirm() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [options, setOptions] = useState<ConfirmOptions>({})
+  const resolveRef = useRef<((value: boolean) => void) | null>(null)
+
+  const confirm = useCallback((opts: ConfirmOptions = {}) => {
+    setOptions({
+      title: 'Are you sure?',
+      message: 'This action cannot be undone.',
+      confirmText: 'Confirm',
+      cancelText: 'Cancel',
+      destructive: false,
+      ...opts,
+    })
+    setIsOpen(true)
+
+    return new Promise<boolean>((resolve) => {
+      resolveRef.current = resolve
+    })
+  }, [])
+
+  function handleConfirm() {
+    setIsOpen(false)
+    resolveRef.current?.(true)
   }
-  isOpen.value = true
 
-  return new Promise((resolve) => {
-    resolvePromise.value = resolve
-  })
-}
+  function handleCancel() {
+    setIsOpen(false)
+    resolveRef.current?.(false)
+  }
 
-function handleConfirm() {
-  isOpen.value = false
-  resolvePromise.value?.(true)
-}
-
-function handleCancel() {
-  isOpen.value = false
-  resolvePromise.value?.(false)
-}
-
-defineExpose({ confirm })
-</script>
-
-<template>
-  <Teleport to="body">
-    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center">
-      <div class="absolute inset-0 bg-black/50" @click="handleCancel" />
-      <div class="relative bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-lg font-semibold">{{ options.title }}</h3>
-        <p class="mt-2 text-gray-600">{{ options.message }}</p>
-        <div class="mt-6 flex gap-3 justify-end">
-          <button @click="handleCancel" class="btn-secondary">
-            {{ options.cancelText }}
+  const ConfirmDialog = isOpen ? (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={handleCancel} />
+      <div className="relative bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 className="text-lg font-semibold">{options.title}</h3>
+        <p className="mt-2 text-gray-600">{options.message}</p>
+        <div className="mt-6 flex gap-3 justify-end">
+          <button onClick={handleCancel} className="btn-secondary">
+            {options.cancelText}
           </button>
           <button
-            @click="handleConfirm"
-            :class="options.destructive ? 'btn-danger' : 'btn-primary'"
+            onClick={handleConfirm}
+            className={options.destructive ? 'btn-danger' : 'btn-primary'}
           >
-            {{ options.confirmText }}
+            {options.confirmText}
           </button>
         </div>
       </div>
     </div>
-  </Teleport>
-</template>
+  ) : null
+
+  return { confirm, ConfirmDialog }
+}
 ```
 
 ### Usage
 
-```vue
-<script setup>
-import { ref } from 'vue'
-import { router } from '@inertiajs/vue3'
-import ConfirmDialog from '@/components/ConfirmDialog.vue'
+```jsx
+import { router } from '@inertiajs/react'
+import { useConfirm } from '@/components/ConfirmDialog'
 
-const confirmDialog = ref(null)
+export default function UserRow({ user }) {
+  const { confirm, ConfirmDialog } = useConfirm()
 
-async function deleteUser(user) {
-  const confirmed = await confirmDialog.value.confirm({
-    title: 'Delete User',
-    message: `Are you sure you want to delete ${user.name}?`,
-    confirmText: 'Delete',
-    destructive: true,
-  })
+  async function deleteUser() {
+    const confirmed = await confirm({
+      title: 'Delete User',
+      message: `Are you sure you want to delete ${user.name}?`,
+      confirmText: 'Delete',
+      destructive: true,
+    })
 
-  if (confirmed) {
-    router.delete(`/users/${user.id}`)
+    if (confirmed) {
+      router.delete(`/users/${user.id}`)
+    }
   }
-}
-</script>
 
-<template>
-  <div>
-    <button @click="deleteUser(user)">Delete</button>
-    <ConfirmDialog ref="confirmDialog" />
-  </div>
-</template>
+  return (
+    <div>
+      <button onClick={deleteUser}>Delete</button>
+      {ConfirmDialog}
+    </div>
+  )
+}
 ```
 
 ---
@@ -1006,7 +1111,7 @@ end
 
 ```javascript
 // channels/notifications_channel.js
-import { router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/react'
 import consumer from './consumer'
 
 consumer.subscriptions.create('NotificationsChannel', {

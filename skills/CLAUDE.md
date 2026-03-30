@@ -145,22 +145,22 @@ When reviewing Inertia Rails code, check for:
    ```
 
 3. **Using `<a>` tags for internal links:**
-   ```vue
-   <!-- BAD -->
+   ```jsx
+   // BAD
    <a href="/users">Users</a>
 
-   <!-- GOOD -->
+   // GOOD
    <Link href="/users">Users</Link>
    ```
 
 4. **Not handling form errors:**
-   ```vue
-   <!-- BAD -->
-   <input v-model="form.email" />
+   ```jsx
+   // BAD
+   <input type="email" value={data.email} onChange={e => setData('email', e.target.value)} />
 
-   <!-- GOOD -->
-   <input v-model="form.email" />
-   <span v-if="form.errors.email">{{ form.errors.email }}</span>
+   // GOOD
+   <input type="email" value={data.email} onChange={e => setData('email', e.target.value)} />
+   {errors.email && <span>{errors.email}</span>}
    ```
 
 ## Framework-Specific Notes
@@ -173,9 +173,9 @@ When reviewing Inertia Rails code, check for:
 - Use `v-model` directly: `v-model="form.email"`
 - Access via `form.errors.email`
 
-### Svelte
-- Use stores with `$form.email`
-- Access errors via `$form.errors.email`
+### Svelte 5
+- Direct property access: `form.email` (no `$` prefix in Svelte 5 runes)
+- Access errors via `form.errors.email`
 
 ## Response Format
 
@@ -190,7 +190,22 @@ When explaining Inertia concepts:
 ## Version Compatibility
 
 These skills target:
-- `inertia_rails` gem 3.x+
-- `@inertiajs/*` packages 2.x+
-- Rails 7.x+
+- `inertia_rails` gem 3.19+
+- `@inertiajs/*` packages 3.x+ (Inertia.js v3)
+- `@inertiajs/vite` plugin (recommended)
+- Rails 7.x+ (Rails 8 supported)
 - Vite Ruby (recommended bundler)
+- React 19+, Vue 3, Svelte 5+
+
+### New in v3
+
+When working with Inertia.js v3 projects, leverage these new features:
+- **`@inertiajs/vite` plugin** for automatic page resolution and simplified SSR
+- **`useHttp`** hook for standalone HTTP requests without navigation
+- **Optimistic updates** with `router.optimistic()` and Form `optimistic` prop
+- **Instant visits** for perceived instant navigation
+- **Precognition** for real-time server-side validation
+- **`<InfiniteScroll>`** component with `InertiaRails.scroll()`
+- **`useLayoutProps`** for sharing data between pages and layouts
+- **Flash API** with `flash.inertia` for rich flash data
+- **View Transitions API** support

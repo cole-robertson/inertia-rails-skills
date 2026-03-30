@@ -4,7 +4,7 @@ description: Build forms in Inertia Rails applications with proper validation, f
 license: MIT
 metadata:
   author: community
-  version: "1.0.0"
+  version: "2.0.0"
 user-invocable: true
 ---
 
@@ -145,7 +145,7 @@ function submit() {
 <script>
 import { useForm } from '@inertiajs/svelte'
 
-let form = useForm({
+const form = useForm({
   name: '',
   email: '',
   password: '',
@@ -153,42 +153,42 @@ let form = useForm({
 })
 
 function submit() {
-  $form.post('/users', {
-    onSuccess: () => $form.reset('password'),
+  form.post('/users', {
+    onSuccess: () => form.reset('password'),
     preserveScroll: true,
   })
 }
 </script>
 
-<form on:submit|preventDefault={submit}>
+<form onsubmit={(e) => { e.preventDefault(); submit() }}>
   <div>
     <label>Name</label>
-    <input type="text" bind:value={$form.name} />
-    {#if $form.errors.name}
-      <span class="error">{$form.errors.name}</span>
+    <input type="text" bind:value={form.name} />
+    {#if form.errors.name}
+      <span class="error">{form.errors.name}</span>
     {/if}
   </div>
 
   <div>
     <label>Email</label>
-    <input type="email" bind:value={$form.email} />
-    {#if $form.errors.email}
-      <span class="error">{$form.errors.email}</span>
+    <input type="email" bind:value={form.email} />
+    {#if form.errors.email}
+      <span class="error">{form.errors.email}</span>
     {/if}
   </div>
 
   <div>
     <label>Password</label>
-    <input type="password" bind:value={$form.password} />
+    <input type="password" bind:value={form.password} />
   </div>
 
   <div>
     <label>Avatar</label>
-    <input type="file" on:change={(e) => ($form.avatar = e.target.files[0])} />
+    <input type="file" onchange={(e) => (form.avatar = e.target.files[0])} />
   </div>
 
-  <button type="submit" disabled={$form.processing}>
-    {$form.processing ? 'Creating...' : 'Create User'}
+  <button type="submit" disabled={form.processing}>
+    {form.processing ? 'Creating...' : 'Create User'}
   </button>
 </form>
 ```
@@ -270,6 +270,7 @@ end
 | `put(url, options)` | Submit PUT request |
 | `patch(url, options)` | Submit PATCH request |
 | `delete(url, options)` | Submit DELETE request |
+| `cancel()` | Cancel an in-progress form submission |
 
 ### Submission Options
 
@@ -468,6 +469,93 @@ export default function CreateUser() {
 }
 ```
 
+### Form Component Advanced Features (v3)
+
+The Form component in v3 supports dotted notation for nested data and arrays:
+
+```jsx
+import { Form } from '@inertiajs/react'
+
+export default function CreateReport() {
+  return (
+    <Form action="/reports" method="post">
+      {({ errors, processing, isDirty, wasSuccessful }) => (
+        <>
+          {/* Dotted notation for nested data */}
+          <input type="text" name="report.title" />
+          {errors['report.title'] && <span>{errors['report.title']}</span>}
+
+          <input type="text" name="report.metadata.author" />
+
+          {/* Array support */}
+          <input type="text" name="tags[]" />
+          <input type="text" name="tags[]" />
+
+          {/* Disable inputs while processing */}
+          <button type="submit" disabled={processing}>
+            Submit
+          </button>
+        </>
+      )}
+    </Form>
+  )
+}
+```
+
+### useFormContext Hook
+
+Access form state from deeply nested components without prop drilling:
+
+```jsx
+import { useFormContext } from '@inertiajs/react'
+
+function SubmitButton() {
+  const { processing, isDirty } = useFormContext()
+
+  return (
+    <button type="submit" disabled={processing || !isDirty}>
+      {processing ? 'Saving...' : 'Save'}
+    </button>
+  )
+}
+```
+
+### Precognition (Real-Time Validation)
+
+Validate forms server-side in real-time without duplicating validation rules on the client:
+
+```jsx
+import { Form } from '@inertiajs/react'
+
+export default function CreateUser() {
+  return (
+    <Form action="/users" method="post" precognition>
+      {({ errors, valid, invalid, validate }) => (
+        <>
+          <input
+            type="email"
+            name="email"
+            onBlur={() => validate('email')}
+          />
+          {valid('email') && <span className="text-green-500">✓</span>}
+          {invalid('email') && <span className="text-red-500">{errors.email}</span>}
+
+          <button type="submit">Create</button>
+        </>
+      )}
+    </Form>
+  )
+}
+```
+
+Server-side:
+```ruby
+# config/initializers/inertia_rails.rb
+InertiaRails.configure do |config|
+  config.precognition_prevent_writes = true  # Prevent DB writes during validation
+end
+```
+
 ## Remembering Form State
 
 Preserve form data across browser history navigation using `useRemember`.
@@ -559,6 +647,104 @@ export default function ContactForm() {
   )
 }
 ```
+
+## The useHttp Hook (v3)
+
+Make standalone HTTP requests without triggering Inertia page visits. Useful for API calls, background operations, and AJAX requests that don't need navigation.
+
+### React
+
+```jsx
+import { useHttp } from '@inertiajs/react'
+
+export default function SearchUsers() {
+  const { data, post, processing, errors } = useHttp()
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState([])
+
+  function search() {
+    post('/api/search', {
+      data: { query },
+      onSuccess: (response) => setResults(response.data),
+    })
+  }
+
+  return (
+    <div>
+      <input value={query} onChange={(e) => setQuery(e.target.value)} />
+      <button onClick={search} disabled={processing}>
+        {processing ? 'Searching...' : 'Search'}
+      </button>
+      {results.map(user => <div key={user.id}>{user.name}</div>)}
+    </div>
+  )
+}
+```
+
+### Key Differences from useForm
+
+| Feature | useForm | useHttp |
+|---------|---------|---------|
+| Triggers navigation | Yes | No |
+| Returns promises | No | Yes |
+| Updates page props | Yes | No |
+| Reactive state | Yes | Yes |
+| File upload progress | Yes | Yes |
+| Precognition support | Yes | Yes |
+
+Use `useHttp` when you need to make API requests that shouldn't cause a page transition.
+
+## Optimistic Updates (v3)
+
+Update the UI immediately before the server responds, with automatic rollback on failure:
+
+### With router
+
+```javascript
+import { router } from '@inertiajs/react'
+
+function toggleLike(post) {
+  router
+    .optimistic((page) => {
+      // Optimistically update the page props
+      const postIndex = page.props.posts.findIndex(p => p.id === post.id)
+      page.props.posts[postIndex].liked = !post.liked
+      page.props.posts[postIndex].likes_count += post.liked ? -1 : 1
+    })
+    .post(`/posts/${post.id}/toggle-like`)
+}
+```
+
+### With Form component
+
+```jsx
+<Form
+  action={`/posts/${post.id}/toggle-like`}
+  method="post"
+  optimistic={(page) => {
+    const p = page.props.posts.find(p => p.id === post.id)
+    p.liked = !p.liked
+  }}
+>
+  <button type="submit">
+    {post.liked ? '❤️' : '🤍'} {post.likes_count}
+  </button>
+</Form>
+```
+
+### With useForm
+
+```javascript
+const form = useForm({})
+
+form
+  .optimistic((page) => {
+    page.props.posts[0].title = 'Updated title'
+  })
+  .patch(`/posts/${post.id}`)
+```
+
+Optimistic updates automatically roll back if the server returns validation errors or a non-2xx response.
 
 ## Best Practices
 

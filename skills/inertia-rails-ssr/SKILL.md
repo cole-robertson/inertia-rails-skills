@@ -4,7 +4,7 @@ description: Set up Server-Side Rendering (SSR) for Inertia Rails applications. 
 license: MIT
 metadata:
   author: community
-  version: "1.0.0"
+  version: "2.0.0"
 user-invocable: true
 ---
 
@@ -22,10 +22,146 @@ Server-Side Rendering pre-renders JavaScript pages on the server, delivering ful
 ## Requirements
 
 - **Node.js** must be available on your server
-- **Vue 3.2.13+** (or install `@vue/server-renderer` separately for older versions)
 - **Vite Ruby** for build configuration
+- **`@inertiajs/vite`** plugin (recommended for v3)
 
-## Setup Steps
+## Recommended: Vite Plugin Setup (v3)
+
+The `@inertiajs/vite` plugin simplifies SSR dramatically. In development, SSR runs through the Vite dev server automatically — no separate Node.js process needed.
+
+### 1. Install the Vite Plugin
+
+```bash
+npm install @inertiajs/vite
+```
+
+### 2. Configure Vite
+
+Update your `vite.config.js`:
+
+**React:**
+```javascript
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import inertia from '@inertiajs/vite'
+
+export default defineConfig({
+  plugins: [
+    inertia(),
+    react(),
+  ],
+})
+```
+
+**Vue 3:**
+```javascript
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import inertia from '@inertiajs/vite'
+
+export default defineConfig({
+  plugins: [
+    inertia(),
+    vue(),
+  ],
+})
+```
+
+**Svelte:**
+```javascript
+import { defineConfig } from 'vite'
+import { svelte } from '@sveltejs/vite-plugin-svelte'
+import inertia from '@inertiajs/vite'
+
+export default defineConfig({
+  plugins: [
+    inertia(),
+    svelte(),
+  ],
+})
+```
+
+### 3. Update Entry Point for Hydration
+
+The client entry point should use hydration instead of full rendering when SSR is enabled.
+
+**React:**
+```javascript
+import { createInertiaApp } from '@inertiajs/react'
+import { hydrateRoot } from 'react-dom/client'
+
+createInertiaApp({
+  resolve: (name) => {
+    const pages = import.meta.glob('../pages/**/*.tsx', { eager: true })
+    return pages[`../pages/${name}.tsx`]
+  },
+  setup({ el, App, props }) {
+    hydrateRoot(el, <App {...props} />)
+  },
+})
+```
+
+**Vue 3:**
+```javascript
+import { createInertiaApp } from '@inertiajs/vue3'
+import { createSSRApp, h } from 'vue'
+
+createInertiaApp({
+  resolve: (name) => {
+    const pages = import.meta.glob('../pages/**/*.vue', { eager: true })
+    return pages[`../pages/${name}.vue`]
+  },
+  setup({ el, App, props, plugin }) {
+    createSSRApp({
+      render: () => h(App, props),
+    })
+      .use(plugin)
+      .mount(el)
+  },
+})
+```
+
+### 4. Enable SSR in Rails
+
+```ruby
+# config/initializers/inertia_rails.rb
+InertiaRails.configure do |config|
+  config.ssr_enabled = true
+
+  # In development, SSR is handled by the Vite dev server automatically.
+  # Set ssr_url to nil to auto-detect from Vite.
+  config.ssr_url = nil
+
+  # Optional: only enable SSR when the bundle exists (production)
+  # config.ssr_bundle = Rails.root.join('public/vite-ssr/ssr.js')
+
+  # Optional: cache SSR responses
+  # config.ssr_cache = true
+  # config.ssr_cache = { expires_in: 1.hour }
+
+  # Optional: handle SSR errors gracefully
+  config.ssr_raise_on_error = !Rails.env.production?
+  config.on_ssr_error = ->(error, page) {
+    Rails.logger.error "SSR error for #{page[:component]}: #{error.message}"
+  }
+end
+```
+
+### 5. Start Development
+
+```bash
+# Terminal 1: Rails server
+bin/rails server
+
+# Terminal 2: Vite dev server (handles SSR automatically)
+bin/vite dev
+```
+
+That's it! No separate SSR server process needed in development.
+
+## Manual SSR Setup (Without Vite Plugin)
+
+If you can't use the Vite plugin, you can set up SSR manually with a separate entry point.
 
 ### 1. Create SSR Entry Point
 
@@ -46,9 +182,7 @@ createServer((page) =>
     render: renderToString,
     resolve: (name) => {
       const page = pages[`../pages/${name}.vue`]
-      if (!page) {
-        throw new Error(`Page not found: ${name}`)
-      }
+      if (!page) throw new Error(`Page not found: ${name}`)
       return page
     },
     setup({ App, props, plugin }) {
@@ -74,9 +208,7 @@ createServer((page) =>
     render: ReactDOMServer.renderToString,
     resolve: (name) => {
       const page = pages[`../pages/${name}.jsx`]
-      if (!page) {
-        throw new Error(`Page not found: ${name}`)
-      }
+      if (!page) throw new Error(`Page not found: ${name}`)
       return page
     },
     setup: ({ App, props }) => <App {...props} />,
@@ -105,92 +237,31 @@ Update `config/vite.json`:
 
 ### 3. Enable SSR in Rails
 
-Update `config/initializers/inertia_rails.rb`:
-
 ```ruby
 InertiaRails.configure do |config|
-  # Enable SSR only when Vite is configured for it
   config.ssr_enabled = ViteRuby.config.ssr_build_enabled
-
-  # SSR server URL (default)
   config.ssr_url = 'http://localhost:13714'
 end
 ```
 
-### 4. Update Client Entry Point
-
-Modify `app/frontend/entrypoints/application.js` for hydration:
-
-**Vue 3:**
-```javascript
-import { createInertiaApp } from '@inertiajs/vue3'
-import { createSSRApp, h } from 'vue'
-
-const pages = import.meta.glob('../pages/**/*.vue', { eager: true })
-
-createInertiaApp({
-  resolve: (name) => pages[`../pages/${name}.vue`],
-  setup({ el, App, props, plugin }) {
-    // Use createSSRApp instead of createApp for hydration
-    createSSRApp({
-      render: () => h(App, props),
-    })
-      .use(plugin)
-      .mount(el)
-  },
-})
-```
-
-**React:**
-```javascript
-import { createInertiaApp } from '@inertiajs/react'
-import { hydrateRoot } from 'react-dom/client'
-
-const pages = import.meta.glob('../pages/**/*.jsx', { eager: true })
-
-createInertiaApp({
-  resolve: (name) => pages[`../pages/${name}.jsx`],
-  setup({ el, App, props }) {
-    // Use hydrateRoot instead of createRoot for SSR
-    hydrateRoot(el, <App {...props} />)
-  },
-})
-```
-
-### 5. Update Layout for SSR Head
-
-Add SSR head injection to your layout:
-
-```erb
-<!-- app/views/layouts/application.html.erb -->
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <%= csp_meta_tag %>
-    <%= inertia_ssr_head %>
-    <%= vite_client_tag %>
-    <%= vite_javascript_tag 'application' %>
-  </head>
-  <body>
-    <%= yield %>
-  </body>
-</html>
-```
-
-### 6. Build and Run
+### 4. Build and Run
 
 ```bash
-# Build both client and SSR bundles
 bin/vite build
 bin/vite build --ssr
-
-# Start the SSR server
 bin/vite ssr
 ```
 
 ## Production Deployment
+
+In production, you still need to build the SSR bundle and run a Node.js server (even with the Vite plugin).
+
+### Build for Production
+
+```bash
+bin/vite build
+bin/vite build --ssr
+```
 
 ### Process Manager (systemd)
 
@@ -228,39 +299,59 @@ pm2 save
 ### Docker
 
 ```dockerfile
-# Run SSR server alongside Rails
 CMD ["sh", "-c", "node public/vite-ssr/ssr.js & bundle exec puma"]
 ```
 
 ## Advanced Configuration
 
+### SSR Response Caching
+
+Cache SSR responses to reduce Node.js load:
+
+```ruby
+InertiaRails.configure do |config|
+  # Simple boolean — uses default Rails cache store
+  config.ssr_cache = true
+
+  # Or with options
+  config.ssr_cache = { expires_in: 1.hour }
+end
+```
+
+### SSR Bundle Detection
+
+Only attempt SSR when the bundle exists:
+
+```ruby
+InertiaRails.configure do |config|
+  config.ssr_bundle = Rails.root.join('public/vite-ssr/ssr.js')
+  # Can also be an array of paths to check
+  # config.ssr_bundle = [
+  #   Rails.root.join('public/vite-ssr/ssr.js'),
+  #   Rails.root.join('public/vite-ssr/ssr.mjs'),
+  # ]
+end
+```
+
 ### Clustering
 
-For better performance on multi-core systems (requires `@inertiajs/core` v2.0.7+):
+For better performance on multi-core systems:
 
 ```javascript
 // ssr/ssr.js
 createServer(
   (page) => createInertiaApp({ /* ... */ }),
-  { cluster: true }  // Enable clustering
+  { cluster: true }
 )
 ```
-
-This runs multiple Node.js processes on a single port using round-robin request handling.
 
 ### Custom Port
 
 ```javascript
 createServer(
   (page) => createInertiaApp({ /* ... */ }),
-  { port: 13715 }  // Custom port
+  { port: 13715 }
 )
-```
-
-Update Rails config to match:
-
-```ruby
-config.ssr_url = 'http://localhost:13715'
 ```
 
 ### Conditional SSR
@@ -277,13 +368,20 @@ class PagesController < ApplicationController
   # Enable SSR for public pages
   inertia_config(ssr_enabled: Rails.env.production?)
 end
+
+# Per-action with a lambda
+class PostsController < ApplicationController
+  inertia_config(ssr_enabled: ->(request) {
+    request.path.start_with?('/blog')
+  })
+end
 ```
 
 ## Title and Meta Tags
 
-### Server-Side Meta Tags
+### Server-Managed Meta Tags (v3)
 
-Set meta tags in your controller:
+Set meta tags from your controller using the `inertia_meta` helper or the `meta:` render option:
 
 ```ruby
 class PostsController < ApplicationController
@@ -321,7 +419,6 @@ defineProps(['post'])
 
   <article>
     <h1>{{ post.title }}</h1>
-    <!-- ... -->
   </article>
 </template>
 ```
@@ -341,7 +438,6 @@ export default function Show({ post }) {
 
       <article>
         <h1>{post.title}</h1>
-        {/* ... */}
       </article>
     </>
   )
@@ -364,11 +460,12 @@ createInertiaApp({
 1. Check if the SSR server is running: `curl http://localhost:13714`
 2. Check logs: `journalctl -u inertia-ssr -f`
 3. Verify the port matches your Rails config
+4. If using the Vite plugin in dev, ensure the Vite dev server is running
 
 ### Hydration Mismatch Errors
 
 1. Ensure client and server render the same content
-2. Avoid browser-only APIs in initial render (use `onMounted`)
+2. Avoid browser-only APIs in initial render (use `onMounted`/`useEffect`)
 3. Check for date/time formatting differences
 
 ```javascript
@@ -388,16 +485,27 @@ onMounted(() => {
 2. Use request-scoped state only
 3. Monitor Node.js memory usage
 
-### Missing Styles on Initial Load
+### SSR Fails Silently
 
-Ensure CSS is included in the SSR bundle or use critical CSS extraction.
+Configure error handling to catch and log SSR failures:
+
+```ruby
+InertiaRails.configure do |config|
+  config.ssr_raise_on_error = !Rails.env.production?
+  config.on_ssr_error = ->(error, page) {
+    Rails.logger.error "SSR error: #{error.message}"
+    Sentry.capture_exception(error) if defined?(Sentry)
+  }
+end
+```
 
 ## Performance Tips
 
 1. **Keep SSR lightweight** - Defer heavy computations to client
-2. **Use streaming** (when supported) for faster TTFB
-3. **Cache SSR responses** for static pages
-4. **Monitor SSR latency** - Add observability
+2. **Use caching** - Enable `ssr_cache` for static/semi-static pages
+3. **Use clustering** - Enable multi-worker mode for production
+4. **Monitor latency** - Track SSR render times
+5. **Bundle detection** - Use `ssr_bundle` to gracefully fall back to CSR
 
 ```ruby
 # Log slow SSR renders

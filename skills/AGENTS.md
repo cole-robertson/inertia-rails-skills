@@ -101,11 +101,19 @@ cp -r inertia-rails-skills/skills/* ~/.claude/skills/
 
 All skills support the three official Inertia.js frontend adapters:
 
-- **React** (`@inertiajs/react`)
+- **React 19+** (`@inertiajs/react`)
 - **Vue 3** (`@inertiajs/vue3`)
-- **Svelte** (`@inertiajs/svelte`)
+- **Svelte 5+** (`@inertiajs/svelte`)
 
-Code examples are provided in Vue 3 by default, with React and Svelte alternatives where significant differences exist.
+Code examples are provided in React by default, with Vue 3 and Svelte alternatives where significant differences exist.
+
+## Version Compatibility
+
+- `inertia_rails` gem 3.19+
+- `@inertiajs/*` packages 3.x+ (Inertia.js v3)
+- `@inertiajs/vite` plugin (recommended)
+- Rails 7.x+ (Rails 8 supported)
+- Vite Ruby (recommended bundler)
 
 ## Resources
 

@@ -4,7 +4,7 @@ description: Set up a new Inertia Rails project or add Inertia to an existing Ra
 license: MIT
 metadata:
   author: community
-  version: "1.0.0"
+  version: "2.0.0"
 user-invocable: true
 argument-hint: "[react|vue|svelte] [--typescript] [--tailwind]"
 ---
@@ -151,17 +151,17 @@ Create or update `app/views/layouts/application.html.erb`:
 
 **For React:**
 ```bash
-npm install @inertiajs/react react react-dom
+npm install @inertiajs/react @inertiajs/vite react react-dom
 ```
 
 **For Vue 3:**
 ```bash
-npm install @inertiajs/vue3 vue
+npm install @inertiajs/vue3 @inertiajs/vite vue
 ```
 
 **For Svelte:**
 ```bash
-npm install @inertiajs/svelte svelte
+npm install @inertiajs/svelte @inertiajs/vite svelte
 ```
 
 ### 5. Configure the Frontend Entry Point
@@ -172,12 +172,10 @@ Create `app/frontend/entrypoints/application.js`:
 ```javascript
 import { createInertiaApp } from '@inertiajs/react'
 import { createRoot } from 'react-dom/client'
+import { inertia } from '@inertiajs/vite'
 
 createInertiaApp({
-  resolve: (name) => {
-    const pages = import.meta.glob('../pages/**/*.jsx', { eager: true })
-    return pages[`../pages/${name}.jsx`]
-  },
+  resolve: inertia.resolvePages('../pages'),
   setup({ el, App, props }) {
     createRoot(el).render(<App {...props} />)
   },
@@ -188,12 +186,10 @@ createInertiaApp({
 ```javascript
 import { createApp, h } from 'vue'
 import { createInertiaApp } from '@inertiajs/vue3'
+import { inertia } from '@inertiajs/vite'
 
 createInertiaApp({
-  resolve: (name) => {
-    const pages = import.meta.glob('../pages/**/*.vue', { eager: true })
-    return pages[`../pages/${name}.vue`]
-  },
+  resolve: inertia.resolvePages('../pages'),
   setup({ el, App, props, plugin }) {
     createApp({ render: () => h(App, props) })
       .use(plugin)
@@ -205,12 +201,10 @@ createInertiaApp({
 **Svelte:**
 ```javascript
 import { createInertiaApp } from '@inertiajs/svelte'
+import { inertia } from '@inertiajs/vite'
 
 createInertiaApp({
-  resolve: (name) => {
-    const pages = import.meta.glob('../pages/**/*.svelte', { eager: true })
-    return pages[`../pages/${name}.svelte`]
-  },
+  resolve: inertia.resolvePages('../pages'),
   setup({ el, App }) {
     new App({ target: el })
   },
@@ -231,11 +225,16 @@ Create `config/initializers/inertia_rails.rb`:
 # frozen_string_literal: true
 
 InertiaRails.configure do |config|
-  # Asset versioning - triggers full reload when assets change
+  # Asset versioning
   config.version = -> { ViteRuby.digest }
 
   # Flash keys exposed to frontend
   config.flash_keys = %i[notice alert]
+
+  # Required for Inertia.js v3
+  config.use_script_element_for_initial_page = true
+  config.use_data_inertia_head_attribute = true
+  config.always_include_errors_hash = true
 
   # Deep merge shared data with page props
   # config.deep_merge_shared_data = true
@@ -334,6 +333,14 @@ bin/vite dev
 | `ssr_url` | `'http://localhost:13714'` | SSR server URL |
 | `default_render` | `false` | Auto-render Inertia |
 | `root_dom_id` | `'app'` | Root element ID |
+| `use_script_element_for_initial_page` | `false` | Use `<script>` tag for initial page data (required for v3) |
+| `use_data_inertia_head_attribute` | `false` | Use `data-inertia` attribute for head tags (required for v3) |
+| `always_include_errors_hash` | `nil` | Always include errors object in page props |
+| `prop_transformer` | identity | Transform prop keys (e.g., camelCase) |
+| `component_path_resolver` | `"path/action"` | Custom component name resolution |
+| `parent_controller` | `'::ApplicationController'` | Base controller for static routes |
+| `expose_shared_prop_keys` | `true` | Include shared prop keys in page metadata |
+| `precognition_prevent_writes` | `false` | Prevent DB writes during precognition |
 
 ## Environment Variables
 
@@ -343,6 +350,55 @@ All config options can be set via `INERTIA_` prefixed env vars:
 INERTIA_SSR_ENABLED=true
 INERTIA_ENCRYPT_HISTORY=true
 ```
+
+## Upgrading to Inertia.js v3
+
+If upgrading an existing Inertia.js v2 project:
+
+### Required Configuration Changes
+
+Add these to your Inertia Rails initializer:
+
+```ruby
+config.use_script_element_for_initial_page = true
+config.use_data_inertia_head_attribute = true
+config.always_include_errors_hash = true
+```
+
+### Breaking Changes
+
+- **React 19+** required
+- **Svelte 5+** with runes syntax required
+- **ES2022** build target required
+- **ESM-only** — no CommonJS
+- **Axios removed** — uses built-in XHR (use `axiosAdapter()` to keep Axios)
+- **Event renames**: `invalid` → `httpException`, `exception` → `networkError`
+- **`router.cancel()`** → `router.cancelAll()`
+- **Head attribute**: `inertia` → `data-inertia`
+
+### Install the Vite Plugin
+
+```bash
+npm install @inertiajs/vite
+```
+
+Update `vite.config.js`:
+
+```javascript
+import inertia from '@inertiajs/vite'
+
+export default defineConfig({
+  plugins: [
+    inertia(),
+    // ... other plugins
+  ],
+})
+```
+
+The Vite plugin provides:
+- Automatic page component resolution
+- Simplified SSR setup (no separate entry point in development)
+- `withApp` callback for providers/plugins
 
 ## Troubleshooting
 
@@ -356,4 +412,4 @@ Check browser console for JavaScript errors. Ensure Vite dev server is running.
 Ensure you're using `render inertia:` not `render json:`.
 
 ### CSRF token errors
-Inertia handles CSRF automatically via Axios. Ensure `protect_from_forgery` is enabled.
+Inertia handles CSRF automatically. Ensure `protect_from_forgery` is enabled.

@@ -4,7 +4,7 @@ description: Comprehensive best practices for Inertia Rails development. Use whe
 license: MIT
 metadata:
   author: community
-  version: "1.0.0"
+  version: "2.0.0"
   framework: inertia-rails
   frontend: react, vue, svelte
 ---
@@ -62,6 +62,7 @@ A comprehensive guide to building high-quality Inertia.js applications with Ruby
 | props-07 | Use proper serialization with as_json | Data formatting |
 | props-08 | Implement deep merge when appropriate | Nested data |
 | props-09 | Use once props for stable data | Navigation performance |
+| props-10 | Use prop transformer for consistent naming | camelCase conversion |
 
 ### Forms & Validation (HIGH)
 
@@ -75,6 +76,8 @@ A comprehensive guide to building high-quality Inertia.js applications with Ruby
 | forms-06 | Handle file uploads correctly | Multipart forms |
 | forms-07 | Preserve form state on validation errors | User experience |
 | forms-08 | Use dotted notation for nested data | Complex forms |
+| forms-09 | Use precognition for real-time validation | Server validation |
+| forms-10 | Use useHttp for non-navigating requests | API calls |
 
 ### Navigation & Routing (HIGH)
 
@@ -87,6 +90,7 @@ A comprehensive guide to building high-quality Inertia.js applications with Ruby
 | nav-05 | Configure proper HTTP methods on links | RESTful actions |
 | nav-06 | Use the inertia route helper for static pages | Simple routes |
 | nav-07 | Handle 303 redirects correctly | POST/PUT/PATCH/DELETE |
+| nav-08 | Use instant visits for perceived performance | Fast navigation |
 
 ### Performance Optimization (MEDIUM-HIGH)
 
@@ -99,6 +103,8 @@ A comprehensive guide to building high-quality Inertia.js applications with Ruby
 | perf-05 | Implement infinite scrolling with merge props | Large datasets |
 | perf-06 | Optimize progress indicators | User feedback |
 | perf-07 | Use async visits for non-blocking operations | Background tasks |
+| perf-08 | Use InfiniteScroll component for pagination | Large datasets |
+| perf-09 | Enable view transitions for smooth animations | Page transitions |
 
 ### Security (MEDIUM-HIGH)
 
@@ -133,6 +139,8 @@ A comprehensive guide to building high-quality Inertia.js applications with Ruby
 | adv-05 | Implement view transitions | Modern animations |
 | adv-06 | Use scroll regions for complex layouts | Scroll management |
 | adv-07 | Handle events system effectively | Lifecycle hooks |
+| adv-08 | Use layout props for page-layout communication | Layout data |
+| adv-09 | Configure the Vite plugin for optimal DX | Project setup |
 
 ---
 

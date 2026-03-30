@@ -4,7 +4,7 @@ description: Implement authentication and authorization in Inertia Rails applica
 license: MIT
 metadata:
   author: community
-  version: "1.0.0"
+  version: "2.0.0"
 user-invocable: true
 ---
 
@@ -77,60 +77,6 @@ class SessionsController < Devise::SessionsController
 end
 ```
 
-### Login Component (Vue)
-
-```vue
-<!-- app/frontend/pages/sessions/new.vue -->
-<script setup>
-import { useForm, Link } from '@inertiajs/vue3'
-
-const form = useForm({
-  email: '',
-  password: '',
-  remember: false,
-})
-
-function submit() {
-  form.post('/users/sign_in', {
-    onSuccess: () => form.reset('password'),
-  })
-}
-</script>
-
-<template>
-  <form @submit.prevent="submit">
-    <h1>Sign In</h1>
-
-    <div>
-      <label>Email</label>
-      <input v-model="form.email" type="email" autofocus />
-      <span v-if="form.errors.email" class="error">{{ form.errors.email }}</span>
-    </div>
-
-    <div>
-      <label>Password</label>
-      <input v-model="form.password" type="password" />
-    </div>
-
-    <div>
-      <label>
-        <input v-model="form.remember" type="checkbox" />
-        Remember me
-      </label>
-    </div>
-
-    <button type="submit" :disabled="form.processing">
-      {{ form.processing ? 'Signing in...' : 'Sign In' }}
-    </button>
-
-    <p>
-      <Link href="/users/sign_up">Create an account</Link>
-      <Link href="/users/password/new">Forgot password?</Link>
-    </p>
-  </form>
-</template>
-```
-
 ### Login Component (React)
 
 ```jsx
@@ -197,6 +143,60 @@ export default function Login() {
     </form>
   )
 }
+```
+
+### Login Component (Vue)
+
+```vue
+<!-- app/frontend/pages/sessions/new.vue -->
+<script setup>
+import { useForm, Link } from '@inertiajs/vue3'
+
+const form = useForm({
+  email: '',
+  password: '',
+  remember: false,
+})
+
+function submit() {
+  form.post('/users/sign_in', {
+    onSuccess: () => form.reset('password'),
+  })
+}
+</script>
+
+<template>
+  <form @submit.prevent="submit">
+    <h1>Sign In</h1>
+
+    <div>
+      <label>Email</label>
+      <input v-model="form.email" type="email" autofocus />
+      <span v-if="form.errors.email" class="error">{{ form.errors.email }}</span>
+    </div>
+
+    <div>
+      <label>Password</label>
+      <input v-model="form.password" type="password" />
+    </div>
+
+    <div>
+      <label>
+        <input v-model="form.remember" type="checkbox" />
+        Remember me
+      </label>
+    </div>
+
+    <button type="submit" :disabled="form.processing">
+      {{ form.processing ? 'Signing in...' : 'Sign In' }}
+    </button>
+
+    <p>
+      <Link href="/users/sign_up">Create an account</Link>
+      <Link href="/users/password/new">Forgot password?</Link>
+    </p>
+  </form>
+</template>
 ```
 
 ## Authentication with has_secure_password
@@ -399,48 +399,6 @@ class UsersController < ApplicationController
 end
 ```
 
-### Frontend Permission Checks (Vue)
-
-```vue
-<script setup>
-import { Link, usePage } from '@inertiajs/vue3'
-
-const props = defineProps(['users', 'can'])
-const { auth } = usePage().props
-</script>
-
-<template>
-  <div>
-    <h1>Users</h1>
-
-    <!-- Global permission -->
-    <Link v-if="can.create_user" href="/users/new" class="btn">
-      Create User
-    </Link>
-
-    <ul>
-      <li v-for="user in users" :key="user.id">
-        {{ user.name }}
-
-        <!-- Per-record permissions -->
-        <Link v-if="user.can.edit" :href="`/users/${user.id}/edit`">
-          Edit
-        </Link>
-
-        <Link
-          v-if="user.can.delete"
-          :href="`/users/${user.id}`"
-          method="delete"
-          as="button"
-        >
-          Delete
-        </Link>
-      </li>
-    </ul>
-  </div>
-</template>
-```
-
 ### Frontend Permission Checks (React)
 
 ```jsx
@@ -485,6 +443,48 @@ export default function UsersIndex({ users, can }) {
 }
 ```
 
+### Frontend Permission Checks (Vue)
+
+```vue
+<script setup>
+import { Link, usePage } from '@inertiajs/vue3'
+
+const props = defineProps(['users', 'can'])
+const { auth } = usePage().props
+</script>
+
+<template>
+  <div>
+    <h1>Users</h1>
+
+    <!-- Global permission -->
+    <Link v-if="can.create_user" href="/users/new" class="btn">
+      Create User
+    </Link>
+
+    <ul>
+      <li v-for="user in users" :key="user.id">
+        {{ user.name }}
+
+        <!-- Per-record permissions -->
+        <Link v-if="user.can.edit" :href="`/users/${user.id}/edit`">
+          Edit
+        </Link>
+
+        <Link
+          v-if="user.can.delete"
+          :href="`/users/${user.id}`"
+          method="delete"
+          as="button"
+        >
+          Delete
+        </Link>
+      </li>
+    </ul>
+  </div>
+</template>
+```
+
 ## History Encryption
 
 Prevent sensitive data exposure via browser back button after logout:
@@ -521,7 +521,7 @@ end
 Client-side:
 
 ```javascript
-import { router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/react'
 
 function logout() {
   router.clearHistory()
@@ -580,9 +580,11 @@ class ApplicationController < ActionController::Base
 end
 ```
 
-Axios (used by Inertia) automatically:
-1. Reads `XSRF-TOKEN` cookie set by Rails
-2. Sends `X-XSRF-TOKEN` header with requests
+Inertia automatically handles CSRF by:
+1. Reading the `XSRF-TOKEN` cookie set by Rails
+2. Sending the `X-XSRF-TOKEN` header with requests
+
+Note: In Inertia.js v3, Axios was replaced with a built-in HTTP client. CSRF handling works the same way — no configuration needed.
 
 ## Registration Flow
 

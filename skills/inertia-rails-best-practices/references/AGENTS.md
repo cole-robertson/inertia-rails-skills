@@ -547,44 +547,45 @@ Forms are central to most applications. These patterns ensure good user experien
 
 **Problem:** Managing form state manually is error-prone and verbose.
 
-**Correct (Vue):**
-```vue
-<script setup>
-import { useForm } from '@inertiajs/vue3'
+**Correct (React):**
+```jsx
+import { useForm } from '@inertiajs/react'
 
-const form = useForm({
-  name: '',
-  email: '',
-  password: '',
-  avatar: null,
-})
-
-function submit() {
-  form.post('/users', {
-    onSuccess: () => form.reset('password'),
-    preserveScroll: true,
+export default function CreateUser() {
+  const { data, setData, post, processing, errors, progress, reset } = useForm({
+    name: '',
+    email: '',
+    password: '',
+    avatar: null,
   })
+
+  function submit(e) {
+    e.preventDefault()
+    post('/users', {
+      onSuccess: () => reset('password'),
+      preserveScroll: true,
+    })
+  }
+
+  return (
+    <form onSubmit={submit}>
+      <input type="text" value={data.name} onChange={e => setData('name', e.target.value)} />
+      {errors.name && <div className="error">{errors.name}</div>}
+
+      <input type="email" value={data.email} onChange={e => setData('email', e.target.value)} />
+      {errors.email && <div className="error">{errors.email}</div>}
+
+      <input type="password" value={data.password} onChange={e => setData('password', e.target.value)} />
+
+      <input type="file" onChange={e => setData('avatar', e.target.files[0])} />
+      {progress && <progress value={progress.percentage} max="100" />}
+
+      <button type="submit" disabled={processing}>
+        {processing ? 'Saving...' : 'Save'}
+      </button>
+    </form>
+  )
 }
-</script>
-
-<template>
-  <form @submit.prevent="submit">
-    <input v-model="form.name" type="text" />
-    <div v-if="form.errors.name" class="error">{{ form.errors.name }}</div>
-
-    <input v-model="form.email" type="email" />
-    <div v-if="form.errors.email" class="error">{{ form.errors.email }}</div>
-
-    <input v-model="form.password" type="password" />
-
-    <input type="file" @change="form.avatar = $event.target.files[0]" />
-    <progress v-if="form.progress" :value="form.progress.percentage" max="100" />
-
-    <button type="submit" :disabled="form.processing">
-      {{ form.processing ? 'Saving...' : 'Save' }}
-    </button>
-  </form>
-</template>
 ```
 
 **Key useForm features:**
@@ -601,18 +602,23 @@ function submit() {
 
 **Impact:** MEDIUM - Declarative syntax for straightforward forms
 
-```vue
-<template>
-  <Form action="/users" method="post">
-    <input type="text" name="name" />
-    <input type="email" name="email" />
+```jsx
+import { Form } from '@inertiajs/react'
 
-    <template #default="{ errors, processing }">
-      <div v-if="errors.name">{{ errors.name }}</div>
-      <button type="submit" :disabled="processing">Submit</button>
-    </template>
-  </Form>
-</template>
+export default function CreateUser() {
+  return (
+    <Form action="/users" method="post">
+      {({ errors, processing }) => (
+        <>
+          <input type="text" name="name" />
+          {errors.name && <div>{errors.name}</div>}
+          <input type="email" name="email" />
+          <button type="submit" disabled={processing}>Submit</button>
+        </>
+      )}
+    </Form>
+  )
+}
 ```
 
 ---
@@ -637,15 +643,11 @@ end
 ```
 
 **Client-side:**
-```vue
-<template>
-  <div>
-    <input v-model="form.email" type="email" />
-    <span v-if="form.errors.email" class="text-red-500">
-      {{ form.errors.email }}
-    </span>
-  </div>
-</template>
+```jsx
+<div>
+  <input type="email" value={data.email} onChange={e => setData('email', e.target.value)} />
+  {errors.email && <span className="text-red-500">{errors.email}</span>}
+</div>
 ```
 
 ---
@@ -711,26 +713,27 @@ def create
 end
 ```
 
-```vue
-<script setup>
-const form = useForm({
+```jsx
+const { data, setData, post, progress } = useForm({
   name: '',
   avatar: null,
 })
 
-function submit() {
-  form.post('/users')  // Automatically uses FormData when files present
+function submit(e) {
+  e.preventDefault()
+  post('/users')  // Automatically uses FormData when files present
 }
-</script>
 
-<template>
-  <form @submit.prevent="submit">
-    <input type="file" @change="form.avatar = $event.target.files[0]" />
-    <progress v-if="form.progress" :value="form.progress.percentage" max="100">
-      {{ form.progress.percentage }}%
-    </progress>
+return (
+  <form onSubmit={submit}>
+    <input type="file" onChange={e => setData('avatar', e.target.files[0])} />
+    {progress && (
+      <progress value={progress.percentage} max="100">
+        {progress.percentage}%
+      </progress>
+    )}
   </form>
-</template>
+)
 ```
 
 **For PUT/PATCH with files (method spoofing):**
@@ -764,14 +767,16 @@ end
 
 **Impact:** MEDIUM - Clean handling of complex form structures
 
-```vue
-<template>
-  <Form action="/reports" method="post">
-    <input type="text" name="report[title]" />
-    <textarea name="report[description]"></textarea>
-    <input type="text" name="report[metadata][author]" />
-  </Form>
-</template>
+```jsx
+<Form action="/reports" method="post">
+  {({ errors }) => (
+    <>
+      <input type="text" name="report.title" />
+      <textarea name="report.description" />
+      <input type="text" name="report.metadata.author" />
+    </>
+  )}
+</Form>
 ```
 
 Access errors with dotted notation: `errors['report.title']`
@@ -789,30 +794,26 @@ Navigation patterns that maintain the SPA experience while leveraging server-sid
 **Impact:** HIGH - Maintains SPA behavior without full page reloads
 
 **Incorrect:**
-```vue
-<a href="/users">Users</a>  <!-- Full page reload -->
+```jsx
+<a href="/users">Users</a>  {/* Full page reload */}
 ```
 
 **Correct:**
-```vue
-<script setup>
-import { Link } from '@inertiajs/vue3'
-</script>
+```jsx
+import { Link } from '@inertiajs/react'
 
-<template>
-  <Link href="/users">Users</Link>
+<Link href="/users">Users</Link>
 
-  <!-- With additional options -->
-  <Link
-    href="/users"
-    method="post"
-    :data="{ active: true }"
-    preserve-scroll
-    preserve-state
-  >
-    Filter Active Users
-  </Link>
-</template>
+{/* With additional options */}
+<Link
+  href="/users"
+  method="post"
+  data={{ active: true }}
+  preserveScroll
+  preserveState
+>
+  Filter Active Users
+</Link>
 ```
 
 ---
@@ -843,27 +844,19 @@ This returns a 409 response with `X-Inertia-Location` header, triggering `window
 
 **Impact:** MEDIUM - Better user experience during navigation
 
-```vue
-<!-- Always preserve scroll -->
-<Link href="/users" preserve-scroll>Users</Link>
+```jsx
+{/* Always preserve scroll */}
+<Link href="/users" preserveScroll>Users</Link>
 
-<!-- Preserve only when there are errors -->
-<script setup>
-function submit() {
-  form.post('/users', {
-    preserveScroll: 'errors'
-  })
-}
-</script>
+{/* Preserve only when there are errors */}
+form.post('/users', {
+  preserveScroll: 'errors'
+})
 
-<!-- Conditional preservation -->
-<script setup>
-function submit() {
-  form.post('/users', {
-    preserveScroll: (page) => page.props.shouldPreserve
-  })
-}
-</script>
+{/* Conditional preservation */}
+form.post('/users', {
+  preserveScroll: (page) => page.props.shouldPreserve
+})
 ```
 
 ---
@@ -872,8 +865,8 @@ function submit() {
 
 **Impact:** MEDIUM - Maintains local component state during navigation
 
-```vue
-<Link href="/users?search=john" preserve-state>
+```jsx
+<Link href="/users?search=john" preserveState>
   Search
 </Link>
 ```
@@ -890,8 +883,8 @@ Useful for:
 
 **Impact:** HIGH - RESTful actions and proper server handling
 
-```vue
-<!-- DELETE request -->
+```jsx
+{/* DELETE request */}
 <Link
   href="/users/1"
   method="delete"
@@ -900,11 +893,11 @@ Useful for:
   Delete User
 </Link>
 
-<!-- POST request with data -->
+{/* POST request with data */}
 <Link
   href="/posts/1/publish"
   method="post"
-  :data="{ published_at: new Date() }"
+  data={{ published_at: new Date() }}
   as="button"
 >
   Publish
@@ -999,27 +992,26 @@ createInertiaApp({
 
 **Impact:** MEDIUM-HIGH - Perceived instant navigation
 
-```vue
-<!-- Prefetch on hover (default) -->
+```jsx
+{/* Prefetch on hover (default) */}
 <Link href="/users" prefetch>Users</Link>
 
-<!-- Prefetch on mount (for very likely navigation) -->
+{/* Prefetch on mount (for very likely navigation) */}
 <Link href="/dashboard" prefetch="mount">Dashboard</Link>
 
-<!-- Prefetch on click (mousedown) -->
+{/* Prefetch on click (mousedown) */}
 <Link href="/reports" prefetch="click">Reports</Link>
 
-<!-- Custom cache duration -->
-<Link href="/users" prefetch cache-for="1m">Users</Link>
+{/* Custom cache duration */}
+<Link href="/users" prefetch cacheFor="1m">Users</Link>
 
-<!-- Programmatic prefetching -->
-<script setup>
-import { router } from '@inertiajs/vue3'
+{/* Programmatic prefetching */}
+import { router } from '@inertiajs/react'
+import { useEffect } from 'react'
 
-onMounted(() => {
+useEffect(() => {
   router.prefetch('/likely-next-page')
-})
-</script>
+}, [])
 ```
 
 ---
@@ -1028,9 +1020,9 @@ onMounted(() => {
 
 **Impact:** MEDIUM - Balance between freshness and speed
 
-```vue
-<!-- Serve cached for 30s, then revalidate in background for up to 1m -->
-<Link href="/users" prefetch :cache-for="['30s', '1m']">
+```jsx
+{/* Serve cached for 30s, then revalidate in background for up to 1m */}
+<Link href="/users" prefetch cacheFor={['30s', '1m']}>
   Users
 </Link>
 ```
@@ -1041,16 +1033,15 @@ onMounted(() => {
 
 **Impact:** MEDIUM - Real-time updates without WebSockets
 
-```vue
-<script setup>
-import { usePoll } from '@inertiajs/vue3'
+```jsx
+import { usePoll } from '@inertiajs/react'
 
 // Poll every 5 seconds
 usePoll(5000)
 
 // With options
 usePoll(5000, {
-  only: ['notifications'],  // Only reload specific props
+  only: ['notifications'],
   onStart: () => console.log('Polling...'),
 })
 
@@ -1058,8 +1049,7 @@ usePoll(5000, {
 const { start, stop } = usePoll(5000, {}, { autoStart: false })
 
 // Throttle in background tabs (default: 90%)
-usePoll(5000, {}, { keepAlive: false })  // default
-</script>
+usePoll(5000, {}, { keepAlive: false })
 ```
 
 ---
@@ -1208,16 +1198,16 @@ def index
 end
 ```
 
-```vue
-<template>
-  <button v-if="can.create_user">Create User</button>
+```jsx
+{can.create_user && <button>Create User</button>}
 
-  <div v-for="user in users" :key="user.id">
-    {{ user.name }}
-    <button v-if="user.can.edit">Edit</button>
-    <button v-if="user.can.delete">Delete</button>
+{users.map(user => (
+  <div key={user.id}>
+    {user.name}
+    {user.can.edit && <button>Edit</button>}
+    {user.can.delete && <button>Delete</button>}
   </div>
-</template>
+))}
 ```
 
 ---
@@ -1256,9 +1246,11 @@ end
 
 **Impact:** CRITICAL - Automatic protection, no extra config needed
 
-Inertia uses Axios, which automatically:
-1. Reads `XSRF-TOKEN` cookie set by Rails
-2. Sends `X-XSRF-TOKEN` header with requests
+Inertia automatically handles CSRF by:
+1. Reading the `XSRF-TOKEN` cookie set by Rails
+2. Sending the `X-XSRF-TOKEN` header with requests
+
+Note: In Inertia.js v3, Axios was replaced with a built-in HTTP client. CSRF handling works the same way.
 
 **Ensure Rails sets the cookie:**
 ```ruby
@@ -1508,40 +1500,31 @@ Patterns for complex applications and edge cases.
 **Problem:** Layout components remount on every navigation.
 
 **Solution:**
-```vue
-<!-- pages/Users/Index.vue -->
-<script>
-import MainLayout from '@/layouts/MainLayout.vue'
+```jsx
+// pages/Users/Index.tsx
+import AppLayout from '@/layouts/AppLayout'
 
-export default {
-  layout: MainLayout,
+function UsersIndex({ users }) {
+  return <div>Users list...</div>
 }
-</script>
 
-<script setup>
-defineProps(['users'])
-</script>
-
-<template>
-  <div>Users list...</div>
-</template>
+UsersIndex.layout = AppLayout
+export default UsersIndex
 ```
 
 **Nested layouts:**
-```javascript
-import MainLayout from '@/layouts/MainLayout.vue'
-import SettingsLayout from '@/layouts/SettingsLayout.vue'
+```jsx
+import MainLayout from '@/layouts/MainLayout'
+import SettingsLayout from '@/layouts/SettingsLayout'
 
-export default {
-  layout: [MainLayout, SettingsLayout],
-}
+UserSettings.layout = [MainLayout, SettingsLayout]
 ```
 
 **Default layout in app initialization:**
 ```javascript
 createInertiaApp({
   resolve: async (name) => {
-    const page = await pages[`../pages/${name}.vue`]()
+    const page = await pages[`../pages/${name}.tsx`]()
     page.default.layout = page.default.layout || MainLayout
     return page
   },
@@ -1585,13 +1568,18 @@ end
 
 **Impact:** MEDIUM - SEO and initial load performance
 
-**Note:** SSR is experimental in Inertia Rails.
+**Recommended: Use the `@inertiajs/vite` plugin** for simplified SSR. In development, SSR runs through the Vite dev server automatically — no separate Node.js process needed.
 
 ```ruby
 # config/initializers/inertia_rails.rb
 InertiaRails.configure do |config|
-  config.ssr_enabled = Rails.env.production?
-  config.ssr_url = ENV.fetch('INERTIA_SSR_URL', 'http://localhost:13714')
+  config.ssr_enabled = true
+  config.ssr_url = nil  # Auto-detect from Vite dev server
+
+  # Production settings
+  config.ssr_bundle = Rails.root.join('public/vite-ssr/ssr.js')
+  config.ssr_cache = Rails.env.production?
+  config.ssr_raise_on_error = !Rails.env.production?
 end
 ```
 
@@ -1608,8 +1596,8 @@ end
 
 **Impact:** LOW - Modern page transition animations
 
-```vue
-<Link href="/users" view-transition>
+```jsx
+<Link href="/users" viewTransition>
   Users
 </Link>
 ```
@@ -1643,7 +1631,7 @@ Inertia tracks scroll position in elements with `scroll-region` attribute.
 **Impact:** MEDIUM - Hook into Inertia lifecycle
 
 ```javascript
-import { router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/react'
 
 // Global event listeners
 router.on('before', (event) => {
@@ -1680,11 +1668,186 @@ router.on('error', (errors) => {
 - `progress` - File upload progress
 - `success` - Successful response without errors
 - `error` - Validation errors present
-- `invalid` - Non-Inertia response (cancelable)
-- `exception` - Unexpected error (cancelable)
+- `httpException` - Non-Inertia response (renamed from `invalid` in v3)
+- `networkError` - Unexpected error (renamed from `exception` in v3)
 - `finish` - Request completed
 - `navigate` - After successful navigation
 - `flash` - Flash data received
+
+---
+
+### adv-08: Use layout props for page-layout communication
+
+**Impact:** MEDIUM - Share data between pages and persistent layouts
+
+```tsx
+// Page sets layout props
+import { useLayoutProps } from '@inertiajs/react'
+import AppLayout from '@/layouts/app-layout'
+
+export default function Dashboard({ stats }) {
+  useLayoutProps({ title: 'Dashboard', breadcrumbs: ['Home', 'Dashboard'] })
+  return <div>Dashboard content</div>
+}
+
+Dashboard.layout = AppLayout
+
+// Layout consumes layout props
+export default function AppLayout({ children }) {
+  const { title, breadcrumbs } = useLayoutProps()
+  return (
+    <div>
+      <h1>{title}</h1>
+      <main>{children}</main>
+    </div>
+  )
+}
+```
+
+---
+
+### adv-09: Configure the Vite plugin for optimal DX
+
+**Impact:** HIGH - Simplifies page resolution and SSR setup
+
+```javascript
+// vite.config.js
+import inertia from '@inertiajs/vite'
+
+export default defineConfig({
+  plugins: [
+    inertia(),
+    // ... framework plugin (react, vue, svelte)
+  ],
+})
+```
+
+The Vite plugin provides:
+- Automatic page component resolution (no `import.meta.glob` needed)
+- Simplified SSR (no separate entry point in development)
+- `withApp` callback for adding providers/plugins
+
+---
+
+## New in v3
+
+### props-10: Use prop transformer for consistent naming
+
+**Impact:** MEDIUM - Consistent camelCase/snake_case conversion
+
+```ruby
+InertiaRails.configure do |config|
+  config.prop_transformer = ->(props:) do
+    props.deep_transform_keys { |key| key.to_s.camelize(:lower) }
+  end
+end
+```
+
+---
+
+### forms-09: Use precognition for real-time validation
+
+**Impact:** HIGH - Server-side validation without page navigation
+
+```jsx
+<Form action="/users" method="post" precognition>
+  {({ errors, valid, invalid, validate }) => (
+    <>
+      <input
+        type="email"
+        name="email"
+        onBlur={() => validate('email')}
+      />
+      {valid('email') && <span className="text-green-500">✓</span>}
+      {invalid('email') && <span className="text-red-500">{errors.email}</span>}
+    </>
+  )}
+</Form>
+```
+
+```ruby
+# Prevent DB writes during precognition requests
+InertiaRails.configure do |config|
+  config.precognition_prevent_writes = true
+end
+```
+
+---
+
+### forms-10: Use useHttp for non-navigating requests
+
+**Impact:** MEDIUM - API calls without triggering page visits
+
+```jsx
+import { useHttp } from '@inertiajs/react'
+
+function SearchWidget() {
+  const { post, processing } = useHttp()
+
+  function search(query) {
+    post('/api/search', {
+      data: { query },
+      onSuccess: (response) => setResults(response.data),
+    })
+  }
+}
+```
+
+---
+
+### nav-08: Use instant visits for perceived performance
+
+**Impact:** MEDIUM-HIGH - Pages render immediately with shared props
+
+```vue
+<!-- Render Dashboard component immediately with shared props -->
+<Link href="/dashboard" component="Dashboard">Dashboard</Link>
+
+<!-- With intermediate data -->
+<Link href="/users/123" component="Users/Show" :page-props="{ user: { name: 'Loading...' } }">
+  View User
+</Link>
+```
+
+---
+
+### perf-08: Use InfiniteScroll component for pagination
+
+**Impact:** MEDIUM - Built-in infinite scroll with server integration
+
+```ruby
+# Server
+def index
+  pagy, posts = pagy(Post.order(created_at: :desc), limit: 20)
+  render inertia: {
+    posts: InertiaRails.scroll(pagy) { posts.as_json(only: [:id, :title]) }
+  }
+end
+```
+
+```vue
+<!-- Client -->
+<InfiniteScroll :data="posts" component="posts">
+  <template #default="{ items }">
+    <div v-for="post in items" :key="post.id">{{ post.title }}</div>
+  </template>
+</InfiniteScroll>
+```
+
+---
+
+### perf-09: Enable view transitions for smooth animations
+
+**Impact:** LOW - Modern animated page transitions
+
+```vue
+<Link href="/users" view-transition>Users</Link>
+```
+
+```css
+::view-transition-old(root) { animation: slide-out 0.3s ease; }
+::view-transition-new(root) { animation: slide-in 0.3s ease; }
+```
 
 ---
 

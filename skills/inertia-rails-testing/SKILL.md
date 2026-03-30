@@ -4,7 +4,7 @@ description: Test Inertia Rails applications with RSpec or Minitest. Use when wr
 license: MIT
 metadata:
   author: community
-  version: "1.0.0"
+  version: "2.0.0"
 user-invocable: true
 ---
 
@@ -130,6 +130,30 @@ it 'defers analytics data' do
 
   expect(inertia).to have_deferred_props(:analytics)
   expect(inertia).to have_deferred_props(analytics: 'stats')  # with group
+end
+```
+
+### `have_no_prop`
+
+Verify a prop is not present:
+
+```ruby
+it 'does not expose sensitive data' do
+  get user_path(user)
+  expect(inertia).to have_no_prop(:password_digest)
+  expect(inertia).to have_no_prop(:remember_token)
+end
+```
+
+### `have_view_data` / `have_exact_view_data`
+
+Check view data (server-side only data not sent to client):
+
+```ruby
+it 'includes view data' do
+  get users_path
+  expect(inertia).to have_view_data(total: 5)
+  expect(inertia).to have_exact_view_data(total: 5)
 end
 ```
 
@@ -362,6 +386,8 @@ require 'inertia_rails/minitest'
 | `have_exact_props` | `assert_inertia_props_equal` |
 | `have_flash` | `assert_inertia_flash` |
 | `have_deferred_props` | `assert_inertia_deferred_props` |
+| `have_no_prop` | `assert_no_inertia_prop` |
+| `have_view_data` | `assert_inertia_view_data` |
 
 Negation: `refute_*` variants available.
 
@@ -430,6 +456,35 @@ class UsersTest < ActionDispatch::IntegrationTest
     inertia_load_deferred_props
     assert_inertia_props analytics: ->(data) { data.present? }
   end
+end
+```
+
+## Testing Configuration (v3)
+
+### Evaluate Optional and Deferred Props
+
+By default, optional and deferred props are not evaluated in tests. Enable evaluation for thorough testing:
+
+```ruby
+# spec/rails_helper.rb (RSpec)
+InertiaRails::Testing.evaluate_optional_props = true
+
+# test/test_helper.rb (Minitest)
+InertiaRails::Testing.evaluate_optional_props = true
+```
+
+With this enabled, you can test the actual values of deferred and optional props:
+
+```ruby
+it 'returns analytics data when deferred props are loaded' do
+  InertiaRails::Testing.evaluate_optional_props = true
+
+  get dashboard_path
+  inertia_load_deferred_props
+
+  expect(inertia).to have_props(
+    analytics: hash_including(:visitors, :page_views)
+  )
 end
 ```
 

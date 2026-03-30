@@ -1,7 +1,7 @@
 # Inertia Rails Skills
 
 <p align="center">
-  <strong>Comprehensive agent skills for building modern Rails applications with Inertia.js</strong>
+  <strong>Comprehensive agent skills for building modern Rails applications with Inertia.js v3</strong>
 </p>
 
 <p align="center">
@@ -23,10 +23,12 @@ Inspired by [Vercel's agent-skills](https://github.com/vercel-labs/agent-skills)
 
 ## Features
 
-- **50+ Best Practices** organized by priority and impact
+- **Updated for Inertia.js v3** and `inertia_rails` gem 3.19+ with `@inertiajs/vite` plugin
+- **60+ Best Practices** organized by priority and impact
 - **8 Categories** from setup to advanced patterns
-- **Multi-Framework Support** for React, Vue 3, and Svelte
-- **Task-Focused Skills** for forms, auth, testing, and performance
+- **React-First Examples** with Vue 3 and Svelte alternatives
+- **v3 Features Covered**: useHttp, optimistic updates, instant visits, precognition, InfiniteScroll, layout props, Flash API, View Transitions
+- **Task-Focused Skills** for forms, auth, testing, SSR, and performance
 - **Code Examples** with incorrect vs. correct patterns
 - **Automated Setup** script for new projects
 
@@ -207,15 +209,17 @@ end
 
 ## Frontend Framework Support
 
-All skills support the three official Inertia.js adapters:
+All skills support the three official Inertia.js v3 adapters:
 
-| Framework | Package | Status |
-|-----------|---------|--------|
-| React | `@inertiajs/react` | Full support |
-| Vue 3 | `@inertiajs/vue3` | Full support |
-| Svelte | `@inertiajs/svelte` | Full support |
+| Framework | Package | Minimum Version |
+|-----------|---------|-----------------|
+| React | `@inertiajs/react` | React 19+ |
+| Vue 3 | `@inertiajs/vue3` | Vue 3.2.13+ |
+| Svelte | `@inertiajs/svelte` | Svelte 5+ |
 
-Examples are primarily in Vue 3, with React/Svelte alternatives where patterns differ significantly.
+Also requires the `@inertiajs/vite` plugin (recommended) and `inertia_rails` gem 3.19+.
+
+Examples are primarily in React, with Vue 3/Svelte alternatives where patterns differ significantly.
 
 ## Documentation
 
